@@ -117,6 +117,14 @@
   .suma b { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; color: var(--acc); }
   .abono { border-color: #7a5f52; background: #261b17; }
   .abono p { margin: 8px 0 0; }
+  .portada { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 12 / 5; margin: 0 0 10px; background: var(--card); border: 1px solid var(--line); }
+  .portada img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .portada::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(23,17,14,0) 45%, rgba(23,17,14,.85)); }
+  .portada span { position: absolute; left: 16px; bottom: 10px; z-index: 1; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+  .opt .mini { position: relative; flex: 0 0 68px; width: 68px; height: 68px; border-radius: 10px; overflow: hidden; background: var(--card2); }
+  .opt .mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .opt .mini .check { position: absolute; top: 5px; left: 5px; width: 22px; height: 22px; flex: none; background: rgba(23,17,14,.72); border-color: rgba(246,239,234,.55); }
+  .opt.on .mini { outline: 2px solid var(--acc); outline-offset: -2px; }
   @media (prefers-reduced-motion: no-preference) { .vista { animation: entra .18s ease-out; } @keyframes entra { from { opacity: 0; transform: translateY(4px); } } }
 </style>
 </head>
@@ -220,6 +228,43 @@ async function cargarFotos() {
   } catch (e) { /* sin fotos, quedan las iniciales */ }
 }
 
+/* ---------- Fotos de servicios y portadas (las sube la administración) ---------- */
+let FSV = leerLS('fotosServ') || {}; // { S01: { v, src }, 'cat:Uñas': { v, src } }
+const SLUGS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion' };
+function ilustracion(cat) {
+  const k = String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z]/)[0];
+  return 'img/cat-' + (SLUGS[k] || 'otros') + '.svg';
+}
+function fotoGuardada(k) {
+  const v = (D && D.fotosServ || {})[k];
+  return v && FSV[k] && FSV[k].v === v && /^data:image\//.test(FSV[k].src) ? FSV[k].src : '';
+}
+/** Foto del servicio → portada de su categoría → ilustración de la categoría. */
+function srcFoto(k, cat) { return fotoGuardada(k) || (cat ? fotoGuardada('cat:' + cat) : '') || ilustracion(cat); }
+const imgFoto = (k, cat, alt, perezosa) => `<img data-fk="${esc(k)}" data-cat="${esc(cat || '')}" src="${esc(srcFoto(k, cat))}" alt="${esc(alt)}"${perezosa ? ' loading="lazy"' : ''}>`;
+function refrescarFotos() { document.querySelectorAll('img[data-fk]').forEach(el => { const s = srcFoto(el.dataset.fk, el.dataset.cat); if (el.getAttribute('src') !== s) el.src = s; }); }
+
+let cargandoFS = false;
+async function cargarFotosServ() {
+  if (cargandoFS || !D || !D.fotosServ) return;
+  cargandoFS = true;
+  Object.keys(FSV).forEach(k => { if (!D.fotosServ[k]) delete FSV[k]; });
+  // Primero las de la categoría abierta, luego las demás.
+  const cat = R.cat || (D.categorias || [])[0];
+  const enCat = k => k === 'cat:' + cat || D.servicios.some(s => s.id === k && s.cat === cat);
+  const faltan = Object.keys(D.fotosServ).filter(k => !fotoGuardada(k)).sort((a, b) => enCat(b) - enCat(a));
+  try {
+    for (let i = 0; i < faltan.length; i += 3) {
+      const lote = faltan.slice(i, i + 3);
+      const r = await api({ a: 'fotosServ', k: lote.join(',') });
+      lote.forEach(k => { if (r.fotos[k]) FSV[k] = { v: D.fotosServ[k], src: r.fotos[k] }; });
+      refrescarFotos();
+    }
+  } catch (e) { /* quedan las ilustraciones */ }
+  guardar('fotosServ', FSV);
+  cargandoFS = false;
+}
+
 const mapaBtn = b => b.mapa ? `<a class="mapa" href="${esc(b.mapa)}" target="_blank" rel="noopener" data-mapa>Cómo llegar ↗</a>` : '';
 
 const GAL = {}; // fotos de trabajos por profesional: id -> [{ id, src }] | 'cargando'
@@ -288,10 +333,11 @@ function vistaReservar() {
   if (!R.cat || cats.indexOf(R.cat) < 0) R.cat = cats[0];
   html += '<div class="cats" role="tablist">' + cats.map(c => `<button class="cat ${c === R.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}${R.servicios.some(id => (D.servicios.find(s => s.id === id) || {}).cat === c) ? ' •' : ''}</button>`).join('') + '</div>';
   const enCat = D.servicios.filter(s => (D.categorias && D.categorias.length ? s.cat === R.cat : true));
+  if (D.categorias && D.categorias.length) html += `<div class="portada">${imgFoto('cat:' + R.cat, R.cat, R.cat)}<span>${esc(R.cat)}</span></div>`;
   html += '<div class="grid">' + enCat.map(s => {
     const on = R.servicios.indexOf(s.id) >= 0;
     return `<button class="opt ${on ? 'on' : ''}" data-s="${esc(s.id)}" aria-pressed="${on}">
-      <span class="check" aria-hidden="true">${on ? '✓' : ''}</span>
+      <span class="mini">${imgFoto(s.id, s.cat, s.nombre, true)}<span class="check" aria-hidden="true">${on ? '✓' : ''}</span></span>
       <span class="opt-txt"><b>${esc(s.nombre)}</b>${s.desc ? `<span class="desc">${esc(s.desc)}</span>` : ''}
         ${s.abono ? `<span class="badge">Abono ${pesos(s.abono)} para reservar</span>` : ''}</span>
       <span class="meta">${precioTxt(s.precio, s.variable)}<br>${dur(s.dur)}</span></button>`;
@@ -538,6 +584,7 @@ function pintarDatos() {
     D = r; guardar('datos', r); pintarDatos();
     if (!q.get('cita')) vistaReservar();
     cargarFotos();
+    cargarFotosServ();
   } catch (e) {
     if (!previo) $('#v-reservar').innerHTML = '<div class="err">' + esc(e.message) + '</div><button class="btn sec" onclick="location.reload()">Reintentar</button>';
   }

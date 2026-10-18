@@ -98,6 +98,13 @@
   .lineas > div span { color: var(--sub); } .lineas > div.fuerte b { color: var(--acc); }
   .barra { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; margin-top: 6px; }
   .barra span { color: var(--sub); } .barra div { background: var(--card2); border-radius: 6px; height: 10px; overflow: hidden; } .barra i { display: block; height: 100%; background: var(--acc); }
+  .sv-fila { display: flex; gap: 12px; align-items: center; }
+  .sv-fila > div { flex: 1; min-width: 0; }
+  .sv-mini { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--card2); display: block; }
+  .portada-adm { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 12 / 5; background: var(--card2); margin-top: 6px; }
+  .portada-adm img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .foto-serv { width: 140px; height: 140px; border-radius: 12px; object-fit: cover; background: var(--card2); display: block; }
+  .foto-acc { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -841,7 +848,7 @@ let SV = null;
 async function cargarServicios(msg) {
   $('#app').innerHTML = nav('servicios') + '<p class="muted" style="text-align:center;margin-top:24px">Cargando servicios…</p>';
   bindNav();
-  try { const r = await api({ a: 'aServicios', token: S.token }); SV = r.servicios; SV.categorias = r.categorias; SV.profesionales = r.profesionales || []; vistaServicios(msg); }
+  try { const r = await api({ a: 'aServicios', token: S.token }); SV = r.servicios; SV.categorias = r.categorias; SV.profesionales = r.profesionales || []; SV.fotosServ = r.fotosServ || {}; vistaServicios(msg); cargarFotosAdm(); }
   catch (e) { if (S) { $('#app').innerHTML = nav('servicios') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarServicios(); } }
 }
 
@@ -849,12 +856,33 @@ function vistaServicios(msg) {
   $('#app').innerHTML = nav('servicios') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') + `
     <p class="muted">Lo que ven las clientas al reservar, por categoría. La duración bloquea la agenda. En cada servicio marcas qué profesionales lo hacen; la web solo las muestra a ellas.</p>
     <button class="btn" id="nuevo-s">+ Nuevo servicio</button>
-    ${[...new Set(SV.map(s => s.cat))].map(ct => `<h2>${esc(ct)}</h2>` + SV.filter(s => s.cat === ct).map(s => `<div class="card"><div class="barb"><div><b>${esc(s.nombre)}</b>${s.activo ? '' : '<span class="tag no">Oculto</span>'}
+    ${[...new Set(SV.map(s => s.cat))].map((ct, ci) => `<h2>${esc(ct)}</h2>
+      <div class="card"><b>Portada de ${esc(ct)}</b>
+        <div class="portada-adm"><img data-afk="cat:${esc(ct)}" data-cat="${esc(ct)}" src="${esc(srcAdm('cat:' + ct, ct))}" alt="Portada de ${esc(ct)}"></div>
+        <div class="foto-acc"><label class="btn mini sec" for="por-${ci}">Cambiar portada</label><input type="file" accept="image/*" class="hidden" id="por-${ci}" data-ci="${ci}" data-portada="${esc(ct)}">
+          ${(SV.fotosServ || {})['cat:' + ct] ? `<button class="btn mini sec" data-ci="${ci}" data-quitarpor="${esc(ct)}">Quitar</button>` : '<span class="muted">Ahora se ve la ilustración del salón.</span>'}</div>
+        <div class="muted" id="por-msg-${ci}"></div></div>` + SV.filter(s => s.cat === ct).map(s => `<div class="card"><div class="sv-fila">
+      <img class="sv-mini" data-afk="${esc(s.id)}" data-cat="${esc(s.cat)}" src="${esc(srcAdm(s.id, s.cat))}" alt="">
+      <div><b>${esc(s.nombre)}</b>${s.activo ? '' : '<span class="tag no">Oculto</span>'}
       <div class="muted">${s.variable ? 'desde ' : ''}${pesosC(s.precio)} · ${durTxt(s.dur)}${s.abono ? ' · abono ' + pesosC(s.abono) : ''}${s.desc ? ' · ' + esc(s.desc) : ''}</div></div>
       <button class="btn mini sec" data-eds="${esc(s.id)}">Editar</button></div></div>`).join('')).join('') || '<p class="muted">Todavía no hay servicios.</p>'}`;
   bindNav();
   $('#nuevo-s').onclick = () => vistaServicioForm(null);
   document.querySelectorAll('[data-eds]').forEach(b => b.onclick = () => vistaServicioForm(SV.find(s => s.id === b.dataset.eds)));
+  const msgPor = (ci, t, err) => { const m = document.getElementById('por-msg-' + ci); if (m) { m.className = err ? 'err' : 'okmsg'; m.textContent = t; } };
+  document.querySelectorAll('[data-portada]').forEach(inp => inp.onchange = async () => {
+    const ct = inp.dataset.portada, f = inp.files[0]; inp.value = '';
+    if (!f) return;
+    msgPor(inp.dataset.ci, 'Subiendo…');
+    try { const t = await subirFotoServ('cat:' + ct, await procesarFoto(f, 1200, 500)); vistaServicios(t); }
+    catch (e) { msgPor(inp.dataset.ci, e.message, true); }
+  });
+  document.querySelectorAll('[data-quitarpor]').forEach(b => b.onclick = async () => {
+    const ct = b.dataset.quitarpor;
+    if (!confirm('¿Quitar la portada de ' + ct + '? Se verá la ilustración del salón.')) return;
+    b.disabled = true;
+    try { vistaServicios(await subirFotoServ('cat:' + ct, '')); } catch (e) { b.disabled = false; msgPor(b.dataset.ci, e.message, true); }
+  });
 }
 
 function vistaServicioForm(s) {
@@ -879,6 +907,14 @@ function vistaServicioForm(s) {
       <label class="switch"><input type="checkbox" id="s-activo" ${s.activo ? 'checked' : ''}> Activo (aparece en la web)</label>
     </div>
     <div class="card">
+      <b>Foto del servicio</b>
+      <p class="muted" style="margin:4px 0 8px">Se ve en la web al lado del servicio. Usa una foto real de un trabajo del salón; se recorta cuadrada.</p>
+      <img class="foto-serv" id="s-foto" data-afk="${esc(nuevo ? '_nuevo' : s.id)}" data-cat="${esc(s.cat)}" src="${esc(srcAdm(nuevo ? '_nuevo' : s.id, s.cat))}" alt="Foto del servicio">
+      <div class="foto-acc"><label class="btn mini sec" for="s-foto-file">Elegir foto</label><input type="file" id="s-foto-file" accept="image/*" class="hidden">
+        <button class="btn mini sec ${!nuevo && (SV.fotosServ || {})[s.id] ? '' : 'hidden'}" id="s-foto-quitar">Quitar foto</button></div>
+      <div class="muted" id="s-foto-msg">${!nuevo && (SV.fotosServ || {})[s.id] ? '' : 'Sin foto propia: se ve la portada de la categoría.'}</div>
+    </div>
+    <div class="card">
       <b>Profesionales que lo hacen</b>
       <p class="muted" style="margin:4px 0 0">Solo ellas aparecen en la web cuando la clienta elige este servicio.</p>
       <div class="chk-grid" id="s-profs">${(SV.profesionales || []).map(b => `<label><input type="checkbox" value="${esc(b.id)}" ${!nuevo && (b.servicios || []).indexOf(s.id) >= 0 ? 'checked' : ''}> ${esc(b.nombre)}${b.activo ? '' : ' (inactiva)'}</label>`).join('') || '<span class="muted">Todavía no hay profesionales.</span>'}</div>
@@ -889,6 +925,24 @@ function vistaServicioForm(s) {
   $('#volver').onclick = () => vistaServicios();
   $('#salir').onclick = () => salir();
   $('#s-cat').onchange = () => { $('#s-cat-otra').hidden = $('#s-cat').value !== '__otra'; };
+  let fotoPendiente = '';
+  const msgFoto = (t, err) => { $('#s-foto-msg').className = err ? 'err' : 'muted'; $('#s-foto-msg').textContent = t; };
+  $('#s-foto-file').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try {
+      const d = await procesarFoto(f, 640, 640);
+      $('#s-foto').src = d;
+      if (nuevo) { fotoPendiente = d; msgFoto('La foto se guarda al crear el servicio.'); return; }
+      msgFoto('Subiendo…');
+      msgFoto(await subirFotoServ(s.id, d));
+      $('#s-foto-quitar').classList.remove('hidden');
+    } catch (err) { msgFoto(err.message, true); }
+  };
+  $('#s-foto-quitar').onclick = async () => {
+    if (!confirm('¿Quitar la foto de este servicio?')) return;
+    try { msgFoto(await subirFotoServ(s.id, '')); $('#s-foto-quitar').classList.add('hidden'); } catch (err) { msgFoto(err.message, true); }
+  };
   $('#guardar').onclick = async () => {
     const b = $('#guardar'); b.disabled = true; $('#msg').textContent = '';
     const cat = $('#s-cat').value === '__otra' ? $('#s-cat-otra').value : $('#s-cat').value;
@@ -896,6 +950,7 @@ function vistaServicioForm(s) {
       const r = await api({ a: 'aGuardarServicio', token: S.token, id: nuevo ? '' : s.id, nombre: $('#s-nombre').value, cat: cat, precio: $('#s-precio').value,
         variable: $('#s-var').checked, abono: $('#s-abono').value, dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked,
         profesionales: [...document.querySelectorAll('#s-profs input:checked')].map(i => i.value) });
+      if (fotoPendiente) { try { await subirFotoServ(r.id, fotoPendiente); } catch (e2) { r.texto += ' La foto no se pudo guardar: ' + e2.message; } }
       cargarServicios(r.texto);
     } catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
   };
@@ -905,6 +960,45 @@ function vistaServicioForm(s) {
     try { const r = await api({ a: 'aBorrarServicio', token: S.token, id: s.id }); cargarServicios(r.texto); }
     catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
   };
+}
+
+/* ---------- Fotos de servicios y portadas ---------- */
+const AFS = {}; // { clave: 'data:image/…' } ya descargadas en esta sesión
+const ILUS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion' };
+const ilustracion = cat => 'img/cat-' + (ILUS[String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z]/)[0]] || 'otros') + '.svg';
+const srcAdm = (k, cat) => AFS[k] || (cat && AFS['cat:' + cat]) || ilustracion(cat);
+function refrescarAdm() { document.querySelectorAll('img[data-afk]').forEach(el => { const s = srcAdm(el.dataset.afk, el.dataset.cat); if (el.getAttribute('src') !== s) el.src = s; }); }
+async function cargarFotosAdm() {
+  const faltan = Object.keys(SV.fotosServ || {}).filter(k => !AFS[k]);
+  for (let i = 0; i < faltan.length; i += 3) {
+    try { const r = await api({ a: 'fotosServ', k: faltan.slice(i, i + 3).join(',') }); Object.assign(AFS, r.fotos); refrescarAdm(); } catch (e) { return; }
+  }
+}
+/** Recorta la imagen al tamaño pedido (como "cover") y la comprime en JPEG. */
+function procesarFoto(file, ancho, alto) {
+  return new Promise((ok, mal) => {
+    if (!file || !/^image\//.test(file.type)) return mal(new Error('Elige una imagen.'));
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const esc0 = Math.max(ancho / img.width, alto / img.height);
+      const w = ancho / esc0, h = alto / esc0, x = (img.width - w) / 2, y = (img.height - h) / 2;
+      const c = document.createElement('canvas'); c.width = ancho; c.height = alto;
+      c.getContext('2d').drawImage(img, x, y, w, h, 0, 0, ancho, alto);
+      URL.revokeObjectURL(url);
+      let q = 0.82, d = c.toDataURL('image/jpeg', q);
+      while (d.length > 260000 && q > 0.4) { q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+      d.length > 260000 ? mal(new Error('La imagen es muy pesada. Prueba con otra.')) : ok(d);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); mal(new Error('No pude leer esa imagen.')); };
+    img.src = url;
+  });
+}
+async function subirFotoServ(clave, datos) {
+  const r = await api({ a: 'aGuardarFotoServ', token: S.token, clave, datos });
+  SV.fotosServ = r.versiones || SV.fotosServ;
+  if (datos) AFS[clave] = datos; else delete AFS[clave];
+  refrescarAdm();
+  return r.texto;
 }
 
 /* ---------- Finanzas ---------- */
