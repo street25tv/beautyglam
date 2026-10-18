@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beauty Glam · Administración</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#17110e">
+<link rel="icon" href="image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #17110e; --card: #221915; --card2: #2e231e; --line: #403128; --txt: #f6efea; --sub: #c4b1a6;
+          --acc: #cfb2a5; --acc-txt: #2b170f; --ok: #2fbf71; --err: #ff6b6b; --wa: #25d366; --oro: #ff9f43; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt); font: 15px/1.45 Inter, system-ui, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 60px; }
+  header { text-align: center; padding: 14px 16px 4px; background: linear-gradient(90deg, #7a5f52, #cfb2a5, #7a5f52) top / 100% 4px no-repeat; }
+  header img { width: min(150px, 46vw); height: auto; margin-top: 8px; display: block; margin-inline: auto; }
+  .titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; letter-spacing: 1px; }
+  h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 700; letter-spacing: .2px; font-size: 24px; margin: 20px 0 8px; }
+  label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 5px; }
+  input, select { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; outline: none; }
+  input:focus, select:focus { border-color: var(--acc); }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px; font-weight: 700; font-size: 16px; cursor: pointer;
+         background: var(--acc); color: var(--acc-txt); margin-top: 14px; text-align: center; text-decoration: none; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.sec { background: var(--card2); color: var(--txt); }
+  .btn.wa { background: var(--wa); color: #06210f; }
+  .btn.peligro { background: #2a1414; color: var(--err); }
+  [hidden] { display: none !important; }
+  .servsel { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; max-height: 340px; overflow-y: auto; padding-right: 2px; }
+  .servsel .cat-t { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--acc); margin: 8px 0 0; font-weight: 700; }
+  .servsel label.sv { display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card2); color: var(--txt); font-size: 14px; cursor: pointer; }
+  .servsel label.sv input { width: 18px; height: 18px; margin: 0; flex: 0 0 18px; accent-color: var(--acc); }
+  .servsel label.sv span { flex: 1; min-width: 0; }
+  .servsel label.sv small { color: var(--sub); white-space: nowrap; }
+  .servsel label.sv:has(input:checked) { border-color: var(--acc); }
+  .suma-sel { margin-top: 8px; font-size: 14px; color: var(--sub); }
+  .suma-sel b { color: var(--txt); }
+  .tag.ab { background: #33251f; color: var(--acc); }
+  .chk-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .chk-grid label { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 11px; border: 1.5px solid var(--line); border-radius: 999px; color: var(--txt); font-size: 14px; cursor: pointer; }
+  .chk-grid label:has(input:checked) { border-color: var(--acc); background: #33251f; }
+  .chk-grid input { margin: 0; accent-color: var(--acc); }
+  .dos-btn { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .dos-btn .btn { margin: 0; }
+  .btn.mini { display: inline-block; width: auto; padding: 8px 12px; font-size: 14px; margin: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-top: 10px; }
+  .muted { color: var(--sub); font-size: 13px; }
+  .err { color: var(--err); font-size: 14px; margin-top: 10px; }
+  .okmsg { color: var(--ok); font-size: 14px; margin-top: 10px; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-top: 10px; }
+  .link { background: none; border: 0; color: var(--sub); text-decoration: underline; cursor: pointer; padding: 6px; }
+  .fila { display: flex; gap: 8px; }
+  .fila > * { flex: 1; min-width: 0; }
+  .barb { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .barb b { font-size: 16px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; vertical-align: middle; }
+  .tag.si { background: #10261a; color: var(--ok); } .tag.no { background: #2a1414; color: var(--err); }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .pin { font-family: ui-monospace, Menlo, monospace; letter-spacing: 2px; }
+  .dia { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 5px; align-items: center; margin-top: 8px; }
+  .dia b { font-size: 14px; }
+  .dia input[type=time] { padding: 9px 4px; min-width: 0; font-size: 14px; }
+  .dia .libre { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--sub); margin: 0; }
+  .dia .libre input { width: 18px; height: 18px; accent-color: var(--acc); }
+  .dia.off input[type=time] { opacity: .3; }
+  .switch { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--txt); font-size: 15px; }
+  .switch input { width: 22px; height: 22px; accent-color: var(--acc); }
+  .exito { border-color: #1f6b43; background: #10261a; }
+  .grande { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 40px; letter-spacing: 3px; color: var(--acc); }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { background: var(--card2); border: 0; border-radius: 20px; padding: 8px 16px; font-weight: 600; cursor: pointer; color: var(--sub); }
+  .tab.on { background: var(--acc); color: var(--acc-txt); }
+  .tag.pend { background: #2b1d0f; color: var(--oro); } .tag.fin { background: #10261a; color: var(--ok); } .tag.at { background: #13233a; color: #7fb2ff; } .tag.na { background: #262626; color: var(--sub); }
+  .cita { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+  .cita-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .pend-card { border-color: #7a5f52; }
+  .dias-nav { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+  .dias-nav input { flex: 1; min-width: 0; padding: 9px; }
+  .bloque { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 6px; align-items: center; margin-top: 8px; }
+  .bloque input { padding: 9px 6px; }
+  .tabs .tab { padding: 8px 12px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .chip { background: var(--card2); border: 0; border-radius: 20px; padding: 7px 12px; font-size: 14px; cursor: pointer; color: var(--txt); }
+  .chip.on { background: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .kpi span { color: var(--sub); font-size: 13px; } .kpi b { font-size: 21px; } .kpi small { color: var(--sub); font-size: 12px; }
+  .kpi.acc { border-color: #7a5f52; background: #261b17; } .kpi.acc b { color: var(--acc); }
+  .lineas > div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+  .lineas > div span { color: var(--sub); } .lineas > div.fuerte b { color: var(--acc); }
+  .barra { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; margin-top: 6px; }
+  .barra span { color: var(--sub); } .barra div { background: var(--card2); border-radius: 6px; height: 10px; overflow: hidden; } .barra i { display: block; height: 100%; background: var(--acc); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="Beauty Glam by Nathaly Torres" width="520" height="520">
+  <div class="titulo">Administración</div>
+</header>
+<main class="wrap" id="app"><p class="muted" style="text-align:center">Cargando…</p></main>
+
+<script>
+/* Misma API de la web de reservas. */
+const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
+const PORTAL = 'https://street25tv.github.io/beautyglam/profesionales.html'; // cámbialo si publicas en otra dirección
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ls = {
+  get(k) { try { return JSON.parse(localStorage.getItem('bglam_' + k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem('bglam_' + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('bglam_' + k); } catch (e) {} }
+};
+const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+let S = ls.get('sesionAdmin'); // { token, hasta }
+let L = [];                    // profesionales
+
+async function api(params) {
+  for (let i = 0; i < 4; i++) {
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(params) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!j.ok) { const e = new Error(j.error || 'Error'); e.final = true; throw e; }
+      return j;
+    } catch (e) {
+      if (e.final) { if (/sesión expiró/.test(e.message)) salir(e.message); throw e; }
+      await new Promise(res => setTimeout(res, 800 * (i + 1)));
+    }
+  }
+  throw new Error('No pudimos conectar. Revisa tu internet.');
+}
+
+const waLink = (tel, txt) => 'https://wa.me/' + tel + '?text=' + encodeURIComponent(txt);
+const msgBienvenida = (nombre, pin) => 'Hola ' + nombre.split(' ')[0] + ', bienvenida a Beauty Glam. Entra a tu portal de profesional: ' + PORTAL +
+  '\nTu PIN es ' + pin + ' (no lo compartas).\n1) En "Mis fotos" sube tu foto de perfil y fotos de tus trabajos.\n2) En "Mi agenda" ves tus citas; al terminar cada servicio toca "Finalizado" para que pase a caja.';
+
+/* ---------- Ingreso ---------- */
+function vistaLogin(msg) {
+  $('#app').innerHTML = `
+    <h2>Entrar</h2>
+    <label for="clave">Clave de administrador</label>
+    <input id="clave" type="password" autocomplete="current-password" autocapitalize="characters" placeholder="••••••••">
+    <div class="err" id="err">${esc(msg || '')}</div>
+    <button class="btn" id="entrar">Entrar</button>
+    <p class="muted">La clave la consultas en Telegram con /claveadmin.</p>`;
+  const entrar = async () => {
+    const b = $('#entrar'); b.disabled = true; $('#err').textContent = '';
+    try {
+      const r = await api({ a: 'aLogin', clave: $('#clave').value });
+      S = { token: r.token, hasta: Date.now() + 5.5 * 3600 * 1000 };
+      ls.set('sesionAdmin', S);
+      cargarAgenda();
+    } catch (e) { b.disabled = false; $('#err').textContent = e.message; }
+  };
+  $('#entrar').onclick = entrar;
+  $('#clave').onkeydown = e => { if (e.key === 'Enter') entrar(); };
+}
+
+function salir(msg) { ls.del('sesionAdmin'); S = null; vistaLogin(msg); }
+
+/* ---------- Lista ---------- */
+async function cargar(msg) {
+  $('#app').innerHTML = '<p class="muted" style="text-align:center">Cargando profesionales…</p>';
+  try { const r = await api({ a: 'aProfesionals', token: S.token }); L = r.profesionales; L.categorias = r.categorias || []; vistaLista(msg); }
+  catch (e) { if (S) $('#app').innerHTML = `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; if ($('#re')) $('#re').onclick = () => cargar(); }
+}
+
+function vistaLista(msg) {
+  const activos = L.filter(b => b.activo).length;
+  $('#app').innerHTML = `
+    ${nav('profesionales')}
+    <div class="muted" style="margin-top:10px">${L.length} profesionales · ${activos} activos</div>
+    <button class="btn" id="nuevo">+ Nuevo profesional</button>
+    ${msg ? `<div class="okmsg">${esc(msg)}</div>` : ''}
+    <h2>Profesionales</h2>
+    ${L.map(b => `
+      <div class="card">
+        <div class="barb"><div><b>${esc(b.nombre)}</b><span class="tag ${b.activo ? 'si' : 'no'}">${b.activo ? 'Activo' : 'Inactivo'}</span>
+          <div class="muted">${esc((b.especialidades || []).join(' · ') || 'Todas las especialidades')}</div>
+          <div class="muted">${esc(b.id)} · ${b.tipo === 'Arriendo' ? 'Arriendo $' + Number(b.arriendo || 0).toLocaleString('es-CO') : 'Comisión ' + (b.pct === '' ? '-' : b.pct) + '%'}${b.whatsapp ? ' · ' + esc(b.whatsapp) : ''}</div></div></div>
+        <div class="muted" style="margin-top:6px">PIN: <span class="pin" data-pin="${esc(b.id)}">••••</span></div>
+        <div class="acciones">
+          <button class="btn mini sec" data-ver="${esc(b.id)}">Ver PIN</button>
+          <button class="btn mini sec" data-editar="${esc(b.id)}">Editar</button>
+          <button class="btn mini sec" data-nuevopin="${esc(b.id)}">Nuevo PIN</button>
+          ${b.whatsapp && b.pin ? `<a class="btn mini sec" target="_blank" rel="noopener" href="${esc(waLink(b.whatsapp, msgBienvenida(b.nombre, b.pin)))}">Enviar acceso</a>` : ''}
+          <button class="btn mini peligro" data-eliminar="${esc(b.id)}">Eliminar</button>
+        </div>
+      </div>`).join('') || '<p class="muted">Todavía no hay profesionales.</p>'}`;
+  bindNav();
+  $('#nuevo').onclick = () => vistaForm(null);
+  document.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => {
+    const x = L.find(y => y.id === b.dataset.ver), el = document.querySelector(`[data-pin="${b.dataset.ver}"]`);
+    const ver = el.textContent === '••••';
+    el.textContent = ver ? (x.pin || 'sin PIN') : '••••';
+    b.textContent = ver ? 'Ocultar' : 'Ver PIN';
+  });
+  document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => vistaForm(L.find(y => y.id === b.dataset.editar)));
+  document.querySelectorAll('[data-nuevopin]').forEach(b => b.onclick = async () => {
+    const x = L.find(y => y.id === b.dataset.nuevopin);
+    if (!confirm('¿Crear un PIN nuevo para ' + x.nombre + '? El anterior deja de funcionar.')) return;
+    b.disabled = true;
+    try { const r = await api({ a: 'aNuevoPin', token: S.token, id: x.id }); x.pin = r.pin; vistaLista(r.texto); }
+    catch (e) { b.disabled = false; alert(e.message); }
+  });
+  document.querySelectorAll('[data-eliminar]').forEach(b => b.onclick = async () => {
+    const x = L.find(y => y.id === b.dataset.eliminar);
+    const ok = prompt('Vas a eliminar a ' + x.nombre + '. Se borran su perfil, sus fotos y sus turnos, y deja de aparecer en la web. ' +
+      'Su historial de citas y pagos se conserva.\n\nSi solo quieres pausarlo, usa Editar y desmarca Activo.\n\nEscribe ELIMINAR para confirmar:');
+    if (ok === null) return;
+    if (ok.trim().toUpperCase() !== 'ELIMINAR') { alert('No se eliminó: no escribiste ELIMINAR.'); return; }
+    b.disabled = true; b.textContent = 'Eliminando…';
+    try { const r = await api({ a: 'aEliminarProfesional', token: S.token, id: x.id }); cargar(r.texto); }
+    catch (e) { b.disabled = false; b.textContent = 'Eliminar'; alert(e.message); }
+  });
+}
+
+/* ---------- Pestañas ---------- */
+function nav(activa) {
+  return `<div class="top"><div class="tabs">
+      <button class="tab ${activa === 'agenda' ? 'on' : ''}" data-nav="agenda">Agenda</button>
+      <button class="tab ${activa === 'facturar' ? 'on' : ''}" data-nav="facturar">Facturar</button>
+      <button class="tab ${activa === 'productos' ? 'on' : ''}" data-nav="productos">Productos</button>
+      <button class="tab ${activa === 'finanzas' ? 'on' : ''}" data-nav="finanzas">Finanzas</button>
+      <button class="tab ${activa === 'servicios' ? 'on' : ''}" data-nav="servicios">Servicios</button>
+      <button class="tab ${activa === 'profesionales' ? 'on' : ''}" data-nav="profesionales">Profesionales</button>
+    </div><button class="link" id="salir">Salir</button></div>`;
+}
+function bindNav() {
+  const ir = { agenda: cargarAgenda, facturar: cargarFacturacion, productos: cargarProductos, finanzas: cargarFinanzas, servicios: cargarServicios, profesionales: cargar };
+  document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => (ir[b.dataset.nav] || cargarAgenda)());
+  if ($('#salir')) $('#salir').onclick = () => salir();
+}
+
+/* ---------- Agenda ---------- */
+let A = { fecha: '', profesional: '*' };
+let AG = null;
+const ESTADO_CLASE = { 'Pendiente': 'pend', 'Confirmada': 'si', 'Finalizada': 'fin', 'Cancelada': 'no', 'Atendida': 'at', 'No asistió': 'na' };
+const sumarDia = (f, n) => { const d = new Date(f + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const fechaCorta = f => { const d = new Date(f + 'T12:00:00'); return ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][d.getDay()] + ' ' + d.getDate() + ' ' + ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][d.getMonth()]; };
+const h12 = h => { const [a, m] = String(h).split(':').map(Number); return ((a % 12) || 12) + ':' + String(m).padStart(2, '0') + (a < 12 ? ' a. m.' : ' p. m.'); };
+
+const durTxt = m => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
+
+/** Lista de servicios con casillas, agrupada por categoría. lista = servicios permitidos. */
+function servSelHtml(id, lista, elegidos) {
+  const cats = [...new Set(lista.map(s => s.cat || 'Otros'))];
+  return cats.map(ct => `<div class="cat-t">${esc(ct)}</div>` + lista.filter(s => (s.cat || 'Otros') === ct).map(s =>
+    `<label class="sv"><input type="checkbox" value="${esc(s.id)}" ${elegidos.indexOf(s.id) >= 0 ? 'checked' : ''}>
+      <span>${esc(s.nombre)}${s.abono ? ' <span class="tag ab">abono ' + pesosC(s.abono) + '</span>' : ''}</span>
+      <small>${s.variable ? 'desde ' : ''}${pesosC(s.precio)} · ${durTxt(s.dur)}</small></label>`).join('')).join('') || '<p class="muted">Sin servicios.</p>';
+}
+const servSel = id => [...document.querySelectorAll('#' + id + ' input:checked')].map(i => i.value);
+function sumaSel(ids) {
+  const l = ids.map(id => AG.servicios.find(s => s.id === id)).filter(Boolean);
+  if (!l.length) return 'Elige uno o varios servicios.';
+  const p = l.reduce((t, s) => t + s.precio, 0), d = l.reduce((t, s) => t + s.dur, 0), a = l.reduce((t, s) => t + (s.abono || 0), 0);
+  return `${l.length} ${l.length === 1 ? 'servicio' : 'servicios'} · <b>${durTxt(d)}</b> · <b>${l.some(s => s.variable) ? 'desde ' : ''}${pesosC(p)}</b>${a ? ' · abono ' + pesosC(a) : ''}`;
+}
+/** Profesionales que hacen todos los servicios elegidos. */
+const aptasPara = ids => AG.profesionales.filter(b => b.activo && ids.every(id => b.servicios.indexOf(id) >= 0));
+
+function avisoHtml(msg, wa) {
+  return (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') +
+    (wa ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(wa)}">Avisar al cliente por WhatsApp</a>` : '');
+}
+
+async function cargarAgenda(msg, wa) {
+  $('#app').innerHTML = nav('agenda') + '<p class="muted" style="text-align:center;margin-top:24px">Cargando agenda…</p>';
+  bindNav();
+  try { AG = await api({ a: 'aAgenda', token: S.token, fecha: A.fecha || '' }); A.fecha = AG.fecha; vistaAgenda(msg, wa); }
+  catch (e) { if (S) { $('#app').innerHTML = nav('agenda') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarAgenda(); } }
+}
+
+function botonesCita(c) {
+  const b = [];
+  if (c.abono && c.abonoPagado < c.abono && (c.estado === 'Pendiente' || c.estado === 'Confirmada')) b.push(`<button class="btn mini" data-abono="${esc(c.id)}">Registrar abono</button>`);
+  if (c.estado === 'Pendiente') b.push(`<button class="btn mini ${c.abono && c.abonoPagado < c.abono ? 'sec' : ''}" data-acc="Confirmada" data-cita="${esc(c.id)}">${c.abono && c.abonoPagado < c.abono ? 'Confirmar sin abono' : 'Confirmar'}</button>`,
+    `<button class="btn mini peligro" data-acc="Cancelada" data-cita="${esc(c.id)}">Rechazar</button>`);
+  if ((c.estado === 'Pendiente' || c.estado === 'Confirmada' || c.estado === 'Finalizada') && AG && c.fecha <= AG.hoy) b.push(`<button class="btn mini" data-cobrar="${esc(c.id)}">Facturar</button>`);
+  if (c.estado === 'Finalizada') b.push(`<button class="btn mini sec" data-acc="Confirmada" data-cita="${esc(c.id)}">Quitar finalizado</button>`);
+  if (c.estado === 'Pendiente' || c.estado === 'Confirmada') b.push(`<button class="btn mini sec" data-mover="${esc(c.id)}">Mover</button>`);
+  if (c.estado === 'Confirmada') b.push(`<button class="btn mini sec" data-acc="No asistió" data-cita="${esc(c.id)}">No asistió</button>`,
+    `<button class="btn mini peligro" data-acc="Cancelada" data-cita="${esc(c.id)}">Cancelar</button>`);
+  if (c.estado === 'Cancelada' || c.estado === 'No asistió') b.push(`<button class="btn mini sec" data-acc="Confirmada" data-cita="${esc(c.id)}">Reactivar</button>`);
+  if (c.tel) b.push(`<a class="btn mini sec" target="_blank" rel="noopener" href="${esc(waLink(c.tel, 'Hola ' + c.cliente.split(' ')[0] + ', '))}">WhatsApp</a>`);
+  return b.join('');
+}
+
+function filaCita(c, conFecha) {
+  return `<div class="cita">
+    <div class="cita-top"><b>${conFecha ? esc(fechaCorta(c.fecha)) + ' · ' : ''}${esc(c.hora12)}</b><span class="tag ${ESTADO_CLASE[c.estado] || ''}">${esc(c.estado)}</span></div>
+    <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)}${conFecha ? ' · ' + esc(c.profesional) : ''}${c.fin ? ' · hasta ' + esc(h12(c.fin)) : ''}</span></div>
+    ${c.abono ? `<div class="muted">Abono: ${c.abonoPagado >= c.abono ? '<span class="tag si">' + pesosC(c.abonoPagado) + ' recibido</span>' : '<span class="tag pend">' + pesosC(c.abonoPagado) + ' de ' + pesosC(c.abono) + '</span>'}</div>` : ''}
+    ${c.notas ? `<div class="muted">${esc(c.notas)}</div>` : ''}
+    <div class="acciones">${botonesCita(c)}</div>
+  </div>`;
+}
+
+function vistaAgenda(msg, wa) {
+  const g = AG;
+  const visibles = g.profesionales.filter(b => (A.profesional === '*' || b.id === A.profesional) && (b.activo || g.citas.some(c => c.profesionalId === b.id)));
+  const ids = g.profesionales.map(b => b.id);
+  const huerfanas = g.citas.filter(c => ids.indexOf(c.profesionalId) < 0);
+  const activas = g.citas.filter(c => c.estado === 'Pendiente' || c.estado === 'Confirmada').length;
+  $('#app').innerHTML = nav('agenda') + avisoHtml(msg, wa) + `
+    <div class="dos-btn"><button class="btn" id="ya">Atender ahora (sin cita)</button><button class="btn sec" id="nueva">+ Nueva cita</button></div>
+    ${g.pendientes.length ? `<div class="card pend-card"><b>Por confirmar (${g.pendientes.length})</b>${g.pendientes.map(c => filaCita(c, true)).join('')}</div>` : ''}
+    <div class="dias-nav">
+      <button class="btn mini sec" id="ant" aria-label="Día anterior">‹</button>
+      <input type="date" id="f-dia" value="${esc(g.fecha)}">
+      <button class="btn mini sec" id="sig" aria-label="Día siguiente">›</button>
+      ${g.fecha !== g.hoy ? '<button class="btn mini sec" id="hoy">Hoy</button>' : ''}
+    </div>
+    <h2>${esc(g.fechaTxt)}</h2>
+    <div class="muted">${g.tienda ? 'Salón abierto ' + esc(g.tienda) : 'El salón está cerrado este día'} · ${activas} ${activas === 1 ? 'cita activa' : 'citas activas'}</div>
+    <label for="f-barb">Profesional</label>
+    <select id="f-barb"><option value="*">Todos</option>${g.profesionales.map(b => `<option value="${esc(b.id)}" ${A.profesional === b.id ? 'selected' : ''}>${esc(b.nombre)}${b.activo ? '' : ' (inactivo)'}</option>`).join('')}</select>
+    ${visibles.map(b => {
+      const mias = g.citas.filter(c => c.profesionalId === b.id);
+      return `<div class="card">
+        <div class="barb"><div><b>${esc(b.nombre)}</b>${b.activo ? '' : '<span class="tag no">Inactivo</span>'}
+          <div class="muted">${b.turnos.length ? 'Turnos: ' + b.turnos.map(t => esc(h12(t[0]) + ' – ' + h12(t[1]))).join(', ') : 'Sin turnos habilitados este día'}</div></div>
+          <button class="btn mini sec" data-turnos="${esc(b.id)}">Turnos</button></div>
+        ${mias.length ? mias.map(c => filaCita(c, false)).join('') : '<p class="muted" style="margin:10px 0 0">Sin citas.</p>'}
+      </div>`;
+    }).join('') || '<p class="muted">No hay profesionales activos.</p>'}
+    ${huerfanas.length ? `<div class="card"><b>Otras citas</b><div class="muted">De profesionales que ya no están en la lista.</div>${huerfanas.map(c => filaCita(c, false)).join('')}</div>` : ''}`;
+  bindNav();
+  const ir = f => { A.fecha = f; cargarAgenda(); };
+  $('#ant').onclick = () => ir(sumarDia(g.fecha, -1));
+  $('#sig').onclick = () => ir(sumarDia(g.fecha, 1));
+  if ($('#hoy')) $('#hoy').onclick = () => ir(g.hoy);
+  $('#f-dia').onchange = e => { if (e.target.value) ir(e.target.value); };
+  $('#f-barb').onchange = e => { A.profesional = e.target.value; vistaAgenda(); };
+  $('#nueva').onclick = () => vistaCitaForm(null);
+  $('#ya').onclick = () => vistaAtenderYa();
+  document.querySelectorAll('[data-turnos]').forEach(b => b.onclick = () => cargarTurnos(b.dataset.turnos));
+  const todas = g.citas.concat(g.pendientes);
+  document.querySelectorAll('[data-mover]').forEach(b => b.onclick = () => vistaCitaForm(todas.find(c => c.id === b.dataset.mover)));
+  document.querySelectorAll('[data-cobrar]').forEach(b => b.onclick = () => vistaFactura(todas.find(c => c.id === b.dataset.cobrar), 'agenda'));
+  document.querySelectorAll('[data-abono]').forEach(b => b.onclick = () => vistaAbono(todas.find(c => c.id === b.dataset.abono)));
+  document.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
+    const c = todas.find(x => x.id === b.dataset.cita), acc = b.dataset.acc;
+    const pregunta = { 'Cancelada': '¿' + (c.estado === 'Pendiente' ? 'Rechazar' : 'Cancelar') + ' la cita de ' + c.cliente + ' (' + fechaCorta(c.fecha) + ', ' + c.hora12 + ')?',
+      'No asistió': '¿Marcar que ' + c.cliente + ' no asistió?' }[acc];
+    if (pregunta && !confirm(pregunta)) return;
+    b.disabled = true;
+    try { const r = await api({ a: 'aEstadoCita', token: S.token, cita: c.id, estado: acc }); cargarAgenda(r.texto, r.wa); }
+    catch (e) { b.disabled = false; alert(e.message); }
+  });
+}
+
+/* Registrar el abono que envió la clienta. Si la cita estaba pendiente, queda confirmada. */
+function vistaAbono(c) {
+  const falta = Math.max(0, c.abono - c.abonoPagado);
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver a la agenda</button><button class="link" id="salir">Salir</button></div>
+    <h2>Abono · cita ${esc(c.id)}</h2>
+    <div class="card">
+      <b>${esc(c.cliente)}</b>
+      <div class="muted">${esc(c.servicio)} · ${esc(fechaCorta(c.fecha))}, ${esc(c.hora12)} · ${esc(c.profesional)}</div>
+      <div class="muted">Abono pedido: ${pesosC(c.abono)}${c.abonoPagado ? ' · ya recibido ' + pesosC(c.abonoPagado) : ''}</div>
+      <div class="fila">
+        <div><label for="ab-valor">Valor recibido</label><input id="ab-valor" inputmode="numeric" value="${esc(falta || c.abono)}"></div>
+        <div><label for="ab-medio">Medio</label><select id="ab-medio">${(AG.medios || ['Efectivo']).map(m => `<option>${esc(m)}</option>`).join('')}</select></div>
+      </div>
+      <p class="muted">Revisa el comprobante antes de registrarlo. ${c.estado === 'Pendiente' ? 'La cita quedará confirmada.' : ''}</p>
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="guardar">Registrar abono</button>`;
+  $('#volver').onclick = () => vistaAgenda();
+  $('#salir').onclick = () => salir();
+  $('#guardar').onclick = async () => {
+    const b = $('#guardar'); b.disabled = true; $('#msg').textContent = '';
+    try { const r = await api({ a: 'aAbono', token: S.token, cita: c.id, valor: $('#ab-valor').value, medio: $('#ab-medio').value }); cargarAgenda(r.texto, r.wa); }
+    catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
+  };
+}
+
+/* Atención inmediata: cliente que llega sin cita. Toma la fecha y la hora de este momento. */
+function vistaAtenderYa() {
+  const g = AG;
+  const activos = g.profesionales.filter(b => b.activo);
+  const ahora = () => new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' });
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver a la agenda</button><button class="link" id="salir">Salir</button></div>
+    <h2>Atender ahora</h2>
+    <p class="muted">Para el cliente que llega sin cita. La cita queda con la hora de este momento (<b id="y-hora">${esc(ahora())}</b>), confirmada y en la agenda del profesional.</p>
+    <div class="card">
+      <label for="y-barb">Profesional</label>
+      <select id="y-barb">${activos.map(b => `<option value="${esc(b.id)}" ${A.profesional === b.id ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select>
+      <label>Servicios</label><div id="y-serv" class="servsel"></div><div class="suma-sel" id="y-suma"></div>
+      <label for="y-nombre">Cliente (opcional)</label><input id="y-nombre" maxlength="60" placeholder="Cliente sin cita">
+      <label for="y-tel">WhatsApp (opcional)</label><input id="y-tel" type="tel" inputmode="numeric" placeholder="300 123 4567">
+      <label for="y-notas">Notas (opcional)</label><input id="y-notas" maxlength="200">
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="empezar">Empezar atención</button>
+    <button class="btn sec" id="forzar" hidden>Atender de todas formas</button>`;
+  $('#volver').onclick = () => vistaAgenda();
+  $('#salir').onclick = () => salir();
+  const reloj = setInterval(() => { const e = $('#y-hora'); if (e) e.textContent = ahora(); else clearInterval(reloj); }, 20000);
+  const opcionesServ = () => {
+    const barb = g.profesionales.find(b => b.id === $('#y-barb').value), antes = $('#y-serv').innerHTML ? servSel('y-serv') : [];
+    const lista = barb ? g.servicios.filter(s => barb.servicios.indexOf(s.id) >= 0) : g.servicios;
+    $('#y-serv').innerHTML = servSelHtml('y-serv', lista, antes);
+    $('#y-suma').innerHTML = sumaSel(servSel('y-serv'));
+  };
+  opcionesServ();
+  $('#y-barb').onchange = () => { $('#forzar').hidden = true; $('#msg').textContent = ''; opcionesServ(); };
+  $('#y-serv').onchange = () => { $('#forzar').hidden = true; $('#msg').textContent = ''; $('#y-suma').innerHTML = sumaSel(servSel('y-serv')); };
+  const enviar = async forzar => {
+    if (!$('#y-barb').value) { $('#msg').textContent = 'No hay profesionales activos.'; return; }
+    if (!servSel('y-serv').length) { $('#msg').textContent = 'Elige al menos un servicio.'; return; }
+    const b1 = $('#empezar'), b2 = $('#forzar'); b1.disabled = b2.disabled = true; $('#msg').textContent = '';
+    try {
+      const r = await api({ a: 'aAtenderYa', token: S.token, profesional: $('#y-barb').value, servicio: servSel('y-serv'),
+        nombre: $('#y-nombre').value, tel: $('#y-tel').value, notas: $('#y-notas').value, forzar: forzar });
+      if (r.cruce) { $('#msg').textContent = r.texto; b2.hidden = false; b1.disabled = b2.disabled = false; return; }
+      clearInterval(reloj);
+      A.fecha = g.hoy;
+      cargarAgenda(r.texto);
+    } catch (e) { b1.disabled = b2.disabled = false; $('#msg').textContent = e.message; }
+  };
+  $('#empezar').onclick = () => enviar(false);
+  $('#forzar').onclick = () => enviar(true);
+}
+
+/* Crear (c = null) o mover (c = la cita) */
+function vistaCitaForm(c) {
+  const g = AG, mover = !!c;
+  const activos = g.profesionales.filter(b => b.activo);
+  const fecha0 = mover ? (c.fecha < g.hoy ? g.hoy : c.fecha) : (g.fecha < g.hoy ? g.hoy : g.fecha);
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver a la agenda</button><button class="link" id="salir">Salir</button></div>
+    <h2>${mover ? 'Mover cita ' + esc(c.id) : 'Nueva cita'}</h2>
+    <div class="card">
+      ${mover ? `<b>${esc(c.cliente)}</b><div class="muted">${esc(c.servicio)} · hoy está: ${esc(fechaCorta(c.fecha))}, ${esc(c.hora12)} con ${esc(c.profesional)}</div>
+      <label for="c-barb">Profesional</label>
+      <select id="c-barb">${activos.map(b => `<option value="${esc(b.id)}" ${c.profesionalId === b.id ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select>` : `
+      <label for="c-nombre">Cliente</label><input id="c-nombre" maxlength="60" placeholder="Nombre y apellido">
+      <label for="c-tel">WhatsApp</label><input id="c-tel" type="tel" inputmode="numeric" placeholder="300 123 4567">
+      <label>Servicios</label><div id="c-serv" class="servsel">${servSelHtml('c-serv', g.servicios, [])}</div><div class="suma-sel" id="c-suma"></div>
+      <label for="c-barb">Profesional</label>
+      <select id="c-barb"></select>`}
+      <label for="c-fecha">Día</label><input id="c-fecha" type="date" min="${esc(g.hoy)}" value="${esc(fecha0)}">
+      <label for="c-hora">Hora libre</label><select id="c-hora"><option value="">Cargando…</option></select>
+      ${mover ? '' : '<label for="c-notas">Notas (opcional)</label><input id="c-notas" maxlength="200">'}
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="guardar">${mover ? 'Mover cita' : 'Guardar cita'}</button>`;
+  $('#volver').onclick = () => vistaAgenda();
+  $('#salir').onclick = () => salir();
+  const servicio = () => (mover ? c.servicioId : servSel('c-serv').join(','));
+  // Al elegir servicios, el selector de profesional muestra solo las que hacen todos.
+  const opcionesServ = () => {
+    if (mover) return;
+    const ids = servSel('c-serv'), antes = $('#c-barb').value || A.profesional;
+    $('#c-suma').innerHTML = sumaSel(ids);
+    const aptas = ids.length ? aptasPara(ids) : [];
+    $('#c-barb').innerHTML = !ids.length ? '<option value="">Primero elige los servicios</option>'
+      : !aptas.length ? '<option value="">Nadie hace todos estos servicios juntos</option>'
+      : (aptas.length > 1 ? '<option value="*">Cualquiera disponible</option>' : '') + aptas.map(b => `<option value="${esc(b.id)}" ${antes === b.id ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('');
+  };
+  opcionesServ();
+  let pedido = 0;
+  const horas = async () => {
+    const sel = $('#c-hora'), n = ++pedido;
+    if (!servicio() || !$('#c-barb').value) { sel.innerHTML = '<option value="">Elige servicios y profesional</option>'; return; }
+    sel.innerHTML = '<option value="">Cargando…</option>';
+    try {
+      const r = await api({ a: 'aLibres', token: S.token, fecha: $('#c-fecha').value, profesional: $('#c-barb').value, servicio: servicio(), excluir: mover ? c.id : '' });
+      if (n !== pedido) return;
+      const todos = $('#c-barb').value === '*';
+      sel.innerHTML = r.libres.length ? r.libres.map(s => `<option value="${esc(s.hora)}">${esc(s.hora12)}${todos ? ' · ' + esc(s.profesionales.map(b => b.nombre).join(', ')) : ''}</option>`).join('')
+        : '<option value="">No hay horas libres ese día</option>';
+    } catch (e) { if (n === pedido) sel.innerHTML = '<option value="">' + esc(e.message) + '</option>'; }
+  };
+  ['#c-barb', '#c-fecha'].concat(mover ? [] : ['#c-serv']).forEach(s => $(s).onchange = () => { if (s === '#c-serv') opcionesServ(); horas(); });
+  horas();
+  $('#guardar').onclick = async () => {
+    const hora = $('#c-hora').value;
+    if (!hora) { $('#msg').textContent = 'Elige una hora libre.'; return; }
+    const btn = $('#guardar'); btn.disabled = true; $('#msg').textContent = '';
+    try {
+      const r = mover
+        ? await api({ a: 'aMoverCita', token: S.token, cita: c.id, fecha: $('#c-fecha').value, hora: hora, profesional: $('#c-barb').value })
+        : await api({ a: 'aCrearCita', token: S.token, nombre: $('#c-nombre').value, tel: $('#c-tel').value, servicio: servSel('c-serv'),
+            profesional: $('#c-barb').value, fecha: $('#c-fecha').value, hora: hora, notas: $('#c-notas').value });
+      A.fecha = $('#c-fecha').value;
+      cargarAgenda(r.texto, r.wa);
+    } catch (e) { btn.disabled = false; $('#msg').textContent = e.message; }
+  };
+}
+
+/* ---------- Turnos de un profesional ---------- */
+let T = null;
+async function cargarTurnos(id, msg) {
+  $('#app').innerHTML = '<p class="muted" style="text-align:center;margin-top:24px">Cargando turnos…</p>';
+  try { T = await api({ a: 'aTurnos', token: S.token, profesional: id }); vistaTurnos(msg); }
+  catch (e) { cargarAgenda(); alert(e.message); }
+}
+
+function vistaTurnos(msg) {
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver a la agenda</button><button class="link" id="salir">Salir</button></div>
+    <h2>Turnos de ${esc(T.nombre)}</h2>
+    <p class="muted">Solo se reservan las horas que estén dentro de un turno.</p>
+    ${msg ? `<div class="okmsg">${esc(msg)}</div>` : ''}
+    <button class="btn sec" id="base">Copiar su horario base a los próximos 7 días</button>
+    ${T.dias.map((d, i) => `<div class="card dia-t" data-i="${i}">
+      <div class="barb"><div><b>${esc(fechaCorta(d.fecha))}</b>
+        <div class="muted">${d.bloques.length ? d.bloques.map(r => esc(h12(r[0]) + ' – ' + h12(r[1]))).join(', ') : (d.tienda ? 'Libre (sin turnos)' : 'Salón cerrada · sin turnos')}${d.citas.length ? ' · ' + d.citas.length + (d.citas.length === 1 ? ' cita' : ' citas') : ''}</div></div>
+        <button class="btn mini sec" data-editar-dia="${i}">Editar</button></div>
+      <div class="editor"></div>
+    </div>`).join('')}`;
+  $('#volver').onclick = () => cargarAgenda();
+  $('#salir').onclick = () => salir();
+  $('#base').onclick = async () => {
+    const b = $('#base'); b.disabled = true;
+    try { const r = await api({ a: 'aCopiarBase', token: S.token, profesional: T.id }); cargarTurnos(T.id, r.texto); }
+    catch (e) { b.disabled = false; alert(e.message); }
+  };
+  document.querySelectorAll('[data-editar-dia]').forEach(b => b.onclick = () => editorDia(Number(b.dataset.editarDia)));
+}
+
+function editorDia(i) {
+  const d = T.dias[i];
+  const caja = document.querySelector(`.dia-t[data-i="${i}"] .editor`);
+  const hs = (String(d.tienda || '').match(/\d{1,2}:\d{2}/g) || ['09:00', '19:00']).map(h => h.padStart(5, '0'));
+  const ta = hs[0], tb = hs[1] || hs[0];
+  let bloques = d.bloques.map(r => r.map(h => String(h).padStart(5, '0')));
+  const pintar = () => {
+    caja.innerHTML = `
+      <div class="muted" style="margin-top:8px">${d.tienda ? 'El salón abre ' + esc(h12(ta)) + ' – ' + esc(h12(tb)) + '.' : 'El salón está cerrado este día.'} Los turnos pueden ir a cualquier hora.</div>
+      ${bloques.map((r, k) => `<div class="bloque"><input type="time" step="900" value="${esc(r[0])}" data-k="${k}" data-p="0">
+        <span class="muted">a</span><input type="time" step="900" value="${esc(r[1])}" data-k="${k}" data-p="1">
+        <button class="btn mini sec" data-quitar="${k}" aria-label="Quitar turno">✕</button></div>`).join('') || '<p class="muted">Día libre: no recibe citas.</p>'}
+      <div class="acciones">
+        <button class="btn mini sec" data-x="agregar">+ Agregar turno</button>
+        <button class="btn mini sec" data-x="todo">Todo el día</button>
+        <button class="btn mini sec" data-x="libre">Día libre</button>
+      </div>
+      ${d.citas.length ? `<div class="muted" style="margin-top:10px">Citas: ${d.citas.map(c => esc(h12(c.hora) + ' ' + c.cliente)).join(', ')}</div>` : ''}
+      <div class="err"></div>
+      <button class="btn" data-x="guardar">Guardar ${esc(fechaCorta(d.fecha))}</button>`;
+    caja.querySelectorAll('input[type=time]').forEach(t => t.onchange = () => { bloques[t.dataset.k][t.dataset.p] = t.value; });
+    caja.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { bloques.splice(Number(b.dataset.quitar), 1); pintar(); });
+    caja.querySelector('[data-x=agregar]').onclick = () => { const u = bloques.length ? bloques[bloques.length - 1][1] : ta; bloques.push([u, tb]); pintar(); };
+    caja.querySelector('[data-x=todo]').onclick = () => { bloques = [[ta, tb]]; pintar(); };
+    caja.querySelector('[data-x=libre]').onclick = () => { bloques = []; pintar(); };
+    caja.querySelector('[data-x=guardar]').onclick = async e => {
+      const b = e.target; b.disabled = true; caja.querySelector('.err').textContent = '';
+      try {
+        let r;
+        try { r = await api({ a: 'aGuardarTurnos', token: S.token, profesional: T.id, fecha: d.fecha, bloques: bloques }); }
+        catch (x) { if (!/citas fuera/.test(x.message) || !confirm(x.message + '\n\n¿Guardar de todas formas?')) throw x; r = await api({ a: 'aGuardarTurnos', token: S.token, profesional: T.id, fecha: d.fecha, bloques: bloques, forzar: true }); }
+        cargarTurnos(T.id, r.texto);
+      }
+      catch (x) { b.disabled = false; caja.querySelector('.err').textContent = x.message; }
+    };
+  };
+  pintar();
+}
+
+/* ---------- Facturación ---------- */
+let FC = null;      // datos de la pantalla de facturación
+const pesosC = v => (v < 0 ? '-$' : '$') + Math.abs(Math.round(v || 0)).toLocaleString('es-CO');
+const numero = v => Math.round(Number(String(v == null ? '' : v).replace(/[^\d]/g, '')) || 0);
+
+async function cargarFacturacion(msg, wa) {
+  $('#app').innerHTML = nav('facturar') + '<p class="muted" style="text-align:center;margin-top:24px">Cargando caja…</p>';
+  bindNav();
+  try { FC = await api({ a: 'aFacturacion', token: S.token }); vistaFacturacion(msg, wa); }
+  catch (e) { if (S) { $('#app').innerHTML = nav('facturar') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarFacturacion(); } }
+}
+
+function filaPorFacturar(c) {
+  return `<div class="cita">
+    <div class="cita-top"><b>${c.fecha !== FC.hoy ? esc(fechaCorta(c.fecha)) + ' · ' : ''}${esc(c.hora12)} · ${esc(c.profesional)}</b><span class="tag ${ESTADO_CLASE[c.estado] || ''}">${esc(c.estado)}</span></div>
+    <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)} · ${pesosC(c.precio)}</span></div>
+    <div class="acciones"><button class="btn mini" data-fact="${esc(c.id)}">Facturar</button></div>
+  </div>`;
+}
+
+function vistaFacturacion(msg, wa) {
+  const d = FC;
+  $('#app').innerHTML = nav('facturar') + avisoHtml(msg, wa) + `
+    <div class="kpis">
+      <div class="kpi acc"><span>Facturado hoy</span><b>${pesosC(d.totalHoy)}</b><small>${d.facturas.length} ${d.facturas.length === 1 ? 'factura' : 'facturas'}</small></div>
+      <div class="kpi"><span>Por facturar</span><b>${d.porFacturar.length}</b><small>servicios finalizados</small></div>
+    </div>
+    <button class="btn" id="mostrador">+ Venta de productos sin cita</button>
+    <div class="card ${d.porFacturar.length ? 'pend-card' : ''}"><b>Por facturar (${d.porFacturar.length})</b>
+      <div class="muted">El profesional tocó "Finalizado": cobra el servicio, los productos y la propina.</div>
+      ${d.porFacturar.map(filaPorFacturar).join('') || '<p class="muted" style="margin:10px 0 0">No hay servicios esperando pago.</p>'}</div>
+    ${d.enCurso.length ? `<div class="card"><b>En curso hoy (${d.enCurso.length})</b><div class="muted">Aún no los finalizan. Puedes facturarlos si el profesional se olvidó de tocar "Finalizado".</div>${d.enCurso.map(filaPorFacturar).join('')}</div>` : ''}
+    <div class="card"><b>Facturas de hoy</b>${d.facturas.length ? d.facturas.map(f => `<div class="cita">
+      <div class="cita-top"><b>${esc(f.id)} · ${esc(h12(f.hora))}</b><b>${pesosC(f.total)}</b></div>
+      <div class="muted">${esc(f.cliente)}${f.profesional ? ' · ' + esc(f.profesional) : ''} · ${esc(f.medio)}</div>
+      <div class="muted">${[f.servicio ? f.servicio + ' ' + pesosC(f.valorServicio) : '', f.abono ? 'abono -' + pesosC(f.abono) : '', f.productos, f.propina ? 'propina ' + pesosC(f.propina) : ''].filter(String).map(esc).join(' · ')}</div>
+    </div>`).join('') : '<p class="muted" style="margin:10px 0 0">Todavía no hay facturas hoy.</p>'}</div>`;
+  bindNav();
+  $('#mostrador').onclick = () => vistaFactura(null, 'facturar');
+  const todas = d.porFacturar.concat(d.enCurso);
+  document.querySelectorAll('[data-fact]').forEach(b => b.onclick = () => vistaFactura(todas.find(c => c.id === b.dataset.fact), 'facturar'));
+}
+
+/* Factura de una cita (c) o venta de mostrador (c = null). volver = 'agenda' | 'facturar' */
+async function vistaFactura(c, volver) {
+  $('#app').innerHTML = '<p class="muted" style="text-align:center;margin-top:24px">Abriendo factura…</p>';
+  let info;
+  try {
+    info = c ? await api({ a: 'aCobroInfo', token: S.token, cita: c.id })
+      : await api({ a: 'aFacturacion', token: S.token }).then(r => ({ medios: r.medios, productos: r.productos }));
+  } catch (e) { (volver === 'agenda' ? cargarAgenda : cargarFacturacion)(); alert(e.message); return; }
+  const prods = info.productos;
+  const lineas = [];          // [{id, cant}]
+  const regresar = (m, w) => (volver === 'agenda' ? cargarAgenda(m, w) : cargarFacturacion(m, w));
+  const cats = [...new Set(prods.map(p => p.cat))];
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver</button><button class="link" id="salir">Salir</button></div>
+    <h2>${c ? 'Factura · cita ' + esc(c.id) : 'Venta de mostrador'}</h2>
+    ${c ? `<div class="card">
+      <b>${esc(c.cliente)}</b>
+      <div class="muted">${esc(fechaCorta(c.fecha))}, ${esc(c.hora12)} · ${esc(c.estado)}</div>
+      ${info.servicios && info.servicios.length ? `<div class="lineas" style="margin-top:8px">${info.servicios.map(s => `<div><span>${esc(s.nombre)}${s.variable ? ' <span class="tag ab">precio variable</span>' : ''}</span><b>${s.variable ? 'desde ' : ''}${pesosC(s.precio)}</b></div>`).join('')}</div>` : `<div class="muted">${esc(c.servicio)}</div>`}
+      ${info.membresia && !info.abono ? `<label class="switch"><input type="checkbox" id="k-memb"> Usar ${esc(info.membresia.plan)} para ${esc(info.membresia.cubreNombre || 'el servicio')} (quedan ${info.membresia.restantes}, vence el ${esc(info.membresia.vence)})</label>` : ''}
+      ${info.abono ? `<div class="okmsg" style="margin-top:10px">Abono recibido: ${pesosC(info.abono)}. Se descuenta del total.</div>` : ''}
+      <label for="k-barb">Lo atendió</label>
+      <select id="k-barb">${info.profesionales.map(b => `<option value="${esc(b.id)}" ${b.id === c.profesionalId ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select>
+      <div class="fila">
+        <div><label for="k-valor">${info.variable ? 'Valor final de los servicios' : 'Valor de los servicios'}</label><input id="k-valor" inputmode="numeric" value="${esc(info.precio)}"></div>
+        <div><label for="k-prop">Propina (para el profesional)</label><input id="k-prop" inputmode="numeric" value="0" placeholder="0"></div>
+      </div>
+    </div>` : `<div class="card">
+      <label for="k-nombre">Cliente (opcional)</label><input id="k-nombre" maxlength="60" placeholder="Nombre">
+      <label for="k-tel">WhatsApp (opcional, para enviarle la factura)</label><input id="k-tel" type="tel" inputmode="numeric" placeholder="300 123 4567">
+    </div>`}
+    <div class="card">
+      <b>Productos</b>
+      <div class="muted">Comestibles, bebidas y artículos del salón. Se descuentan del inventario al confirmar.</div>
+      ${prods.length ? `<div class="fila" style="margin-top:10px">
+        <div style="flex:3"><select id="k-prod" aria-label="Producto">${cats.map(ct => `<optgroup label="${esc(ct)}">${prods.filter(p => p.cat === ct).map(p => `<option value="${esc(p.id)}" ${p.stock <= 0 ? 'disabled' : ''}>${esc(p.nombre)} · ${pesosC(p.precio)} · ${p.stock <= 0 ? 'agotado' : 'quedan ' + p.stock}</option>`).join('')}</optgroup>`).join('')}</select></div>
+        <div style="flex:1"><input id="k-cant" type="number" min="1" value="1" aria-label="Cantidad"></div>
+      </div>
+      <button class="btn mini sec" id="k-agregar" style="margin-top:8px">+ Agregar</button>` : '<p class="muted">No hay productos activos. Créalos en la pestaña Productos.</p>'}
+      <div id="k-lineas"></div>
+    </div>
+    <div class="card">
+      <label for="k-medio" style="margin-top:0">Medio de pago</label>
+      <select id="k-medio">${info.medios.map(m => `<option>${esc(m)}</option>`).join('')}</select>
+      <div class="lineas" id="k-resumen" style="margin-top:10px"></div>
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="confirmar">Confirmar pago</button>`;
+  $('#volver').onclick = () => regresar();
+  $('#salir').onclick = () => salir();
+  const prod = id => prods.find(p => p.id === id);
+  const resumen = () => {
+    const usar = $('#k-memb') && $('#k-memb').checked;
+    const combo = info.servicios && info.servicios.length > 1;
+    const serv = c ? (usar && !combo ? 0 : numero($('#k-valor').value)) : 0;
+    const abono = c ? Math.min(info.abono || 0, serv) : 0;
+    const prop = c ? numero($('#k-prop').value) : 0;
+    const vp = lineas.reduce((s, l) => s + prod(l.id).precio * l.cant, 0);
+    $('#k-lineas').innerHTML = lineas.map((l, i) => `<div class="cita-top" style="margin-top:8px"><span>${esc(prod(l.id).nombre)} × ${l.cant}</span>
+      <span>${pesosC(prod(l.id).precio * l.cant)} <button class="btn mini sec" data-quitar="${i}" aria-label="Quitar">✕</button></span></div>`).join('');
+    $('#k-lineas').querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { lineas.splice(Number(b.dataset.quitar), 1); resumen(); });
+    $('#k-resumen').innerHTML = (c ? `<div><span>Servicios${usar ? (combo ? ' (sin el de la membresía)' : ' (membresía)') : ''}</span><b>${pesosC(serv)}</b></div>` : '') +
+      (abono ? `<div><span>Abono recibido</span><b>-${pesosC(abono)}</b></div>` : '') +
+      `<div><span>Productos</span><b>${pesosC(vp)}</b></div>` + (c ? `<div><span>Propina</span><b>${pesosC(prop)}</b></div>` : '') +
+      `<div class="fuerte"><span>Total a cobrar</span><b>${pesosC(serv - abono + vp + prop)}</b></div>`;
+    return serv - abono + vp + prop;
+  };
+  if (c) {
+    $('#k-valor').oninput = resumen; $('#k-prop').oninput = resumen;
+    if ($('#k-memb')) $('#k-memb').onchange = e => {
+      const combo = info.servicios && info.servicios.length > 1;
+      if (combo) $('#k-valor').value = e.target.checked ? Math.max(0, info.precio - (info.membresia.cubrePrecio || 0)) : info.precio;
+      else $('#k-valor').disabled = e.target.checked;
+      resumen();
+    };
+  }
+  if ($('#k-agregar')) $('#k-agregar').onclick = () => {
+    const id = $('#k-prod').value, cant = Math.max(1, Math.floor(Number($('#k-cant').value) || 1)), p = prod(id);
+    if (!p) return;
+    const ya = lineas.find(l => l.id === id), total = (ya ? ya.cant : 0) + cant;
+    if (total > p.stock) { $('#msg').textContent = 'Solo quedan ' + p.stock + ' de ' + p.nombre + '.'; return; }
+    $('#msg').textContent = '';
+    if (ya) ya.cant = total; else lineas.push({ id, cant });
+    $('#k-cant').value = 1; resumen();
+  };
+  resumen();
+  $('#confirmar').onclick = async () => {
+    const total = resumen();
+    if (!c && !lineas.length) { $('#msg').textContent = 'Agrega al menos un producto.'; return; }
+    if (!confirm('¿Confirmar el pago de ' + pesosC(total) + (total ? ' en ' + $('#k-medio').value : '') + '?')) return;
+    const b = $('#confirmar'); b.disabled = true; b.textContent = 'Guardando…'; $('#msg').textContent = '';
+    try {
+      const p = { a: 'aFacturar', token: S.token, productos: lineas, medio: $('#k-medio').value };
+      if (c) Object.assign(p, { cita: c.id, profesional: $('#k-barb').value, valor: $('#k-valor').value, propina: $('#k-prop').value, usarMembresia: !!($('#k-memb') && $('#k-memb').checked) });
+      else Object.assign(p, { nombre: $('#k-nombre').value, tel: $('#k-tel').value });
+      const r = await api(p);
+      vistaFacturaLista(r, regresar);
+    } catch (e) { b.disabled = false; b.textContent = 'Confirmar pago'; $('#msg').textContent = e.message; }
+  };
+}
+
+function vistaFacturaLista(r, regresar) {
+  $('#app').innerHTML = `
+    <h2>Pago confirmado</h2>
+    <div class="card exito">
+      <b>Factura ${esc(r.factura)}</b>
+      <div class="grande">${pesosC(r.total)}</div>
+      <div class="muted">${esc(r.medio)}</div>
+      <div class="lineas" style="margin-top:8px">${r.lineas.map(l => `<div><span>${esc(l)}</span></div>`).join('')}</div>
+      ${r.bajos.length ? `<div class="err">Stock bajo: ${esc(r.bajos.join(', '))}</div>` : ''}
+    </div>
+    ${r.wa ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(r.wa)}">Enviar la factura al cliente por WhatsApp</a>` : ''}
+    <button class="btn sec" id="seguir">Seguir</button>`;
+  $('#seguir').onclick = () => regresar(r.texto);
+}
+
+/* ---------- Productos e inventario ---------- */
+let PR = null;
+async function cargarProductos(msg) {
+  $('#app').innerHTML = nav('productos') + '<p class="muted" style="text-align:center;margin-top:24px">Cargando productos…</p>';
+  bindNav();
+  try { PR = await api({ a: 'aProductos', token: S.token }); vistaProductos(msg); }
+  catch (e) { if (S) { $('#app').innerHTML = nav('productos') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarProductos(); } }
+}
+
+function vistaProductos(msg) {
+  const d = PR;
+  const cats = d.categorias.filter(ct => d.productos.some(p => p.cat === ct));
+  $('#app').innerHTML = nav('productos') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') + `
+    <div class="kpis">
+      <div class="kpi"><span>Inventario a costo</span><b>${pesosC(d.valorCosto)}</b><small>a precio de venta ${pesosC(d.valorVenta)}</small></div>
+      <div class="kpi ${d.bajos ? 'acc' : ''}"><span>Stock bajo</span><b>${d.bajos}</b><small>${d.bajos ? 'por reponer' : 'todo en orden'}</small></div>
+    </div>
+    <button class="btn" id="nuevo-p">+ Nuevo producto</button>
+    ${cats.map(ct => `<h2>${esc(ct)}</h2>${d.productos.filter(p => p.cat === ct).map(p => `<div class="card">
+      <div class="barb"><div><b>${esc(p.nombre)}</b>${p.activo ? '' : '<span class="tag no">Oculto</span>'}${p.bajo ? '<span class="tag pend">Stock bajo</span>' : ''}
+        <div class="muted">Venta ${pesosC(p.precio)} · costo ${pesosC(p.costo)} · margen ${pesosC(p.precio - p.costo)}</div></div>
+        <div style="text-align:right;white-space:nowrap;flex:0 0 auto"><b style="font-size:22px">${p.stock}</b><div class="muted">en stock</div></div></div>
+      <div class="acciones">
+        <button class="btn mini" data-mov="${esc(p.id)}" data-t="Entrada">+ Entrada</button>
+        <button class="btn mini sec" data-mov="${esc(p.id)}" data-t="Salida">Salida</button>
+        <button class="btn mini sec" data-mov="${esc(p.id)}" data-t="Conteo">Conteo</button>
+        <button class="btn mini sec" data-editp="${esc(p.id)}">Editar</button>
+      </div></div>`).join('')}`).join('') || '<p class="muted">Todavía no hay productos.</p>'}
+    <div class="card"><b>Últimos movimientos</b>${d.movimientos.length ? d.movimientos.map(m => `<div class="cita">
+      <div class="cita-top"><span>${esc(m.producto)}</span><b>${m.cantidad > 0 ? '+' : ''}${m.cantidad} → ${m.stock}</b></div>
+      <div class="muted">${esc(m.fecha)} · ${esc(m.tipo)}${m.ref ? ' · ' + esc(m.ref) : ''}${m.notas ? ' · ' + esc(m.notas) : ''}</div></div>`).join('') : '<p class="muted">Sin movimientos.</p>'}</div>`;
+  bindNav();
+  $('#nuevo-p').onclick = () => vistaProductoForm(null);
+  document.querySelectorAll('[data-editp]').forEach(b => b.onclick = () => vistaProductoForm(d.productos.find(p => p.id === b.dataset.editp)));
+  document.querySelectorAll('[data-mov]').forEach(b => b.onclick = () => vistaMovimiento(d.productos.find(p => p.id === b.dataset.mov), b.dataset.t));
+}
+
+function vistaProductoForm(p) {
+  const nuevo = !p;
+  p = p || { nombre: '', cat: 'Bebida', precio: '', costo: '', stock: 0, minimo: 3, activo: true, desc: '' };
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver</button><button class="link" id="salir">Salir</button></div>
+    <h2>${nuevo ? 'Nuevo producto' : 'Editar ' + esc(p.nombre)}</h2>
+    <div class="card">
+      <label for="p-nombre">Nombre</label><input id="p-nombre" maxlength="60" value="${esc(p.nombre)}" placeholder="Gaseosa 400 ml">
+      <label for="p-cat">Categoría</label><select id="p-cat">${PR.categorias.map(ct => `<option ${ct === p.cat ? 'selected' : ''}>${esc(ct)}</option>`).join('')}</select>
+      <div class="fila">
+        <div><label for="p-precio">Precio de venta</label><input id="p-precio" inputmode="numeric" value="${esc(p.precio)}" placeholder="3500"></div>
+        <div><label for="p-costo">Costo (compra)</label><input id="p-costo" inputmode="numeric" value="${esc(p.costo)}" placeholder="1800"></div>
+      </div>
+      <div class="fila">
+        ${nuevo ? '<div><label for="p-stock">Stock inicial</label><input id="p-stock" type="number" min="0" value="0"></div>' : ''}
+        <div><label for="p-min">Avisar cuando queden</label><input id="p-min" type="number" min="0" value="${esc(p.minimo)}"></div>
+      </div>
+      <label for="p-desc">Descripción (opcional)</label><input id="p-desc" maxlength="140" value="${esc(p.desc)}">
+      <label class="switch"><input type="checkbox" id="p-activo" ${p.activo ? 'checked' : ''}> Activo (se puede vender)</label>
+      ${nuevo ? '' : '<p class="muted">El stock se cambia con Entrada, Salida o Conteo para que quede registrado.</p>'}
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="guardar">${nuevo ? 'Crear producto' : 'Guardar cambios'}</button>`;
+  $('#volver').onclick = () => vistaProductos();
+  $('#salir').onclick = () => salir();
+  $('#guardar').onclick = async () => {
+    const b = $('#guardar'); b.disabled = true; $('#msg').textContent = '';
+    try {
+      const r = await api({ a: 'aGuardarProducto', token: S.token, id: nuevo ? '' : p.id, nombre: $('#p-nombre').value, cat: $('#p-cat').value,
+        precio: $('#p-precio').value, costo: $('#p-costo').value, stock: nuevo ? $('#p-stock').value : '', minimo: $('#p-min').value,
+        desc: $('#p-desc').value, activo: $('#p-activo').checked });
+      cargarProductos(r.texto);
+    } catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
+  };
+}
+
+function vistaMovimiento(p, tipo) {
+  const textos = {
+    Entrada: ['Llegó mercancía', 'Unidades que llegaron', 'Se suman al stock.'],
+    Salida: ['Sacar del inventario', 'Unidades que salen', 'Producto vencido, dañado o usado en el local. No es una venta.'],
+    Conteo: ['Conteo físico', 'Unidades que contaste', 'El stock queda exactamente en este número.']
+  }[tipo];
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver</button><button class="link" id="salir">Salir</button></div>
+    <h2>${esc(textos[0])}</h2>
+    <div class="card">
+      <b>${esc(p.nombre)}</b><div class="muted">Stock actual: ${p.stock}</div>
+      <label for="m-cant">${esc(textos[1])}</label><input id="m-cant" type="number" min="0" value="${tipo === 'Conteo' ? p.stock : ''}">
+      ${tipo === 'Entrada' ? `<label for="m-costo">Costo unitario de esta compra (opcional)</label><input id="m-costo" inputmode="numeric" placeholder="${esc(p.costo)}">` : ''}
+      <label for="m-notas">Nota${tipo === 'Salida' ? '' : ' (opcional)'}</label><input id="m-notas" maxlength="140" placeholder="${tipo === 'Entrada' ? 'Proveedor, factura…' : tipo === 'Salida' ? 'Vencido, dañado, uso del local…' : ''}">
+      <p class="muted">${esc(textos[2])}</p>
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="guardar">Guardar</button>`;
+  $('#volver').onclick = () => vistaProductos();
+  $('#salir').onclick = () => salir();
+  $('#guardar').onclick = async () => {
+    const b = $('#guardar'); b.disabled = true; $('#msg').textContent = '';
+    try {
+      const r = await api({ a: 'aMovimiento', token: S.token, id: p.id, tipo, cantidad: $('#m-cant').value, costo: $('#m-costo') ? $('#m-costo').value : '', notas: $('#m-notas').value });
+      cargarProductos(r.texto);
+    } catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
+  };
+}
+
+/* ---------- Servicios del salón ---------- */
+let SV = null;
+async function cargarServicios(msg) {
+  $('#app').innerHTML = nav('servicios') + '<p class="muted" style="text-align:center;margin-top:24px">Cargando servicios…</p>';
+  bindNav();
+  try { const r = await api({ a: 'aServicios', token: S.token }); SV = r.servicios; SV.categorias = r.categorias; vistaServicios(msg); }
+  catch (e) { if (S) { $('#app').innerHTML = nav('servicios') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarServicios(); } }
+}
+
+function vistaServicios(msg) {
+  $('#app').innerHTML = nav('servicios') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') + `
+    <p class="muted">Lo que ven las clientas al reservar, por categoría. La duración bloquea la agenda; la categoría define qué profesionales lo hacen (sus especialidades).</p>
+    <button class="btn" id="nuevo-s">+ Nuevo servicio</button>
+    ${[...new Set(SV.map(s => s.cat))].map(ct => `<h2>${esc(ct)}</h2>` + SV.filter(s => s.cat === ct).map(s => `<div class="card"><div class="barb"><div><b>${esc(s.nombre)}</b>${s.activo ? '' : '<span class="tag no">Oculto</span>'}
+      <div class="muted">${s.variable ? 'desde ' : ''}${pesosC(s.precio)} · ${durTxt(s.dur)}${s.abono ? ' · abono ' + pesosC(s.abono) : ''}${s.desc ? ' · ' + esc(s.desc) : ''}</div></div>
+      <button class="btn mini sec" data-eds="${esc(s.id)}">Editar</button></div></div>`).join('')).join('') || '<p class="muted">Todavía no hay servicios.</p>'}`;
+  bindNav();
+  $('#nuevo-s').onclick = () => vistaServicioForm(null);
+  document.querySelectorAll('[data-eds]').forEach(b => b.onclick = () => vistaServicioForm(SV.find(s => s.id === b.dataset.eds)));
+}
+
+function vistaServicioForm(s) {
+  const nuevo = !s;
+  s = s || { nombre: '', cat: SV.categorias[0] || 'Cabello', precio: '', variable: false, abono: 0, dur: 30, desc: '', activo: true };
+  const cats = SV.categorias.indexOf(s.cat) >= 0 ? SV.categorias : SV.categorias.concat(s.cat);
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver</button><button class="link" id="salir">Salir</button></div>
+    <h2>${nuevo ? 'Nuevo servicio' : 'Editar ' + esc(s.nombre)}</h2>
+    <div class="card">
+      <label for="s-nombre">Nombre</label><input id="s-nombre" maxlength="50" value="${esc(s.nombre)}" placeholder="Uñas semipermanentes">
+      <label for="s-cat">Categoría (especialidad)</label>
+      <select id="s-cat">${cats.map(ct => `<option ${ct === s.cat ? 'selected' : ''}>${esc(ct)}</option>`).join('')}<option value="__otra">Otra…</option></select>
+      <input id="s-cat-otra" maxlength="30" placeholder="Nombre de la nueva categoría" hidden style="margin-top:8px">
+      <div class="fila">
+        <div><label for="s-precio">Precio</label><input id="s-precio" inputmode="numeric" value="${esc(s.precio)}" placeholder="45000"></div>
+        <div><label for="s-dur">Duración (min)</label><input id="s-dur" type="number" min="5" max="480" step="5" value="${esc(s.dur)}"></div>
+      </div>
+      <label class="switch"><input type="checkbox" id="s-var" ${s.variable ? 'checked' : ''}> Precio variable: la web muestra "desde" y el valor final se ajusta al facturar</label>
+      <label for="s-abono">Abono para reservar (0 = sin abono)</label><input id="s-abono" inputmode="numeric" value="${esc(s.abono || 0)}" placeholder="0">
+      <label for="s-desc">Descripción (opcional)</label><input id="s-desc" maxlength="140" value="${esc(s.desc)}" placeholder="Incluye retiro del esmalte anterior">
+      <label class="switch"><input type="checkbox" id="s-activo" ${s.activo ? 'checked' : ''}> Activo (aparece en la web)</label>
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="guardar">${nuevo ? 'Crear servicio' : 'Guardar cambios'}</button>
+    ${nuevo ? '' : '<button class="btn peligro" id="borrar">Borrar servicio</button>'}`;
+  $('#volver').onclick = () => vistaServicios();
+  $('#salir').onclick = () => salir();
+  $('#s-cat').onchange = () => { $('#s-cat-otra').hidden = $('#s-cat').value !== '__otra'; };
+  $('#guardar').onclick = async () => {
+    const b = $('#guardar'); b.disabled = true; $('#msg').textContent = '';
+    const cat = $('#s-cat').value === '__otra' ? $('#s-cat-otra').value : $('#s-cat').value;
+    try {
+      const r = await api({ a: 'aGuardarServicio', token: S.token, id: nuevo ? '' : s.id, nombre: $('#s-nombre').value, cat: cat, precio: $('#s-precio').value,
+        variable: $('#s-var').checked, abono: $('#s-abono').value, dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked });
+      cargarServicios(r.texto);
+    } catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
+  };
+  if ($('#borrar')) $('#borrar').onclick = async () => {
+    if (!confirm('¿Borrar ' + s.nombre + '? Si tiene historial, solo se oculta.')) return;
+    const b = $('#borrar'); b.disabled = true;
+    try { const r = await api({ a: 'aBorrarServicio', token: S.token, id: s.id }); cargarServicios(r.texto); }
+    catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
+  };
+}
+
+/* ---------- Finanzas ---------- */
+let F = { rango: 'semana', desde: '', hasta: '', profesional: '*' };
+let FD = null;
+const pesosF = v => (v < 0 ? '-$' : '$') + Math.abs(Math.round(v || 0)).toLocaleString('es-CO');
+function rangoFechas(r, hoy) {
+  const d = new Date(hoy + 'T12:00:00'), iso = x => x.toISOString().slice(0, 10);
+  if (r === 'hoy') return [hoy, hoy];
+  if (r === 'semana') { const l = new Date(d); l.setDate(l.getDate() - ((l.getDay() + 6) % 7)); return [iso(l), hoy]; }
+  if (r === 'mes') return [hoy.slice(0, 8) + '01', hoy];
+  if (r === 'mesant') { const a = new Date(d.getFullYear(), d.getMonth() - 1, 1, 12), z = new Date(d.getFullYear(), d.getMonth(), 0, 12); return [iso(a), iso(z)]; }
+  return [F.desde || hoy, F.hasta || hoy];
+}
+
+async function cargarFinanzas(msg) {
+  $('#app').innerHTML = nav('finanzas') + '<p class="muted" style="text-align:center;margin-top:24px">Calculando…</p>';
+  bindNav();
+  const hoy = (FD && FD.hoy) || (AG && AG.hoy) || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
+  const [desde, hasta] = rangoFechas(F.rango, hoy);
+  try { FD = await api({ a: 'aFinanzas', token: S.token, desde, hasta, profesional: F.profesional }); F.desde = FD.desde; F.hasta = FD.hasta; vistaFinanzas(msg); }
+  catch (e) { if (S) { $('#app').innerHTML = nav('finanzas') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarFinanzas(); } }
+}
+
+function vistaFinanzas(msg) {
+  const d = FD, t = d.totales;
+  const chips = [['hoy', 'Hoy'], ['semana', 'Esta semana'], ['mes', 'Este mes'], ['mesant', 'Mes pasado'], ['otro', 'Otro']];
+  const maxDia = Math.max(1, ...d.porDia.map(x => x.valor));
+  $('#app').innerHTML = nav('finanzas') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') + `
+    <div class="chips">${chips.map(c => `<button class="chip ${F.rango === c[0] ? 'on' : ''}" data-rango="${c[0]}">${c[1]}</button>`).join('')}</div>
+    <div class="fila ${F.rango === 'otro' ? '' : 'hidden'}" id="otro" style="margin-top:8px">
+      <div><label for="f-desde">Desde</label><input type="date" id="f-desde" value="${esc(d.desde)}"></div>
+      <div><label for="f-hasta">Hasta</label><input type="date" id="f-hasta" value="${esc(d.hasta)}"></div>
+    </div>
+    <label for="f-barbf">Profesional</label>
+    <select id="f-barbf"><option value="*">Todos</option>${(AG ? AG.profesionales : d.profesionales).map(b => `<option value="${esc(b.id)}" ${F.profesional === b.id ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select>
+    <h2>${esc(d.periodoTxt)}</h2>
+    <div class="kpis">
+      <div class="kpi"><span>Ingresos</span><b>${pesosF(t.ingresos)}</b><small>${t.servicios} ${t.servicios === 1 ? 'servicio' : 'servicios'}${t.productos ? ' · productos ' + pesosF(t.productos) : ''}${t.membresias ? ' · planes ' + pesosF(t.membresias) : ''}</small></div>
+      <div class="kpi acc"><span>Para el salón</span><b>${pesosF(t.barberia)}</b><small>comisiones${t.arriendos ? ' y arriendos' : ''}${t.productos ? ' + productos' : ''}${t.membresias ? ' + planes' : ''}</small></div>
+      <div class="kpi"><span>Pago a profesionales</span><b>${pesosF(t.pagoProfesionals)}</b><small>${t.porCobrar ? 'te deben ' + pesosF(t.porCobrar) + ' de arriendo' : 'incluye propinas'}</small></div>
+      <div class="kpi"><span>Propinas</span><b>${pesosF(t.propinas)}</b><small>ticket promedio ${pesosF(t.ticket)}</small></div>
+    </div>
+    ${F.profesional === '*' ? `<div class="card"><b>Productos</b><div class="lineas">
+      <div><span>Vendido (${t.unidadesProductos} ${t.unidadesProductos === 1 ? 'unidad' : 'unidades'})</span><b>${pesosF(t.productos)}</b></div>
+      <div><span>Costo de lo vendido</span><b>${pesosF(t.costoProductos)}</b></div>
+      <div class="fuerte"><span>Ganancia en productos</span><b>${pesosF(t.gananciaProductos)}</b></div></div>
+      ${d.productosTop.length ? '<div class="muted" style="margin-top:8px">Más vendidos</div><div class="lineas">' + d.productosTop.map(p => `<div><span>${esc(p.nombre)} · ${p.cantidad}</span><b>${pesosF(p.valor)}</b></div>`).join('') + '</div>' : ''}</div>` : ''}
+    <h2>Por profesional</h2>
+    ${d.profesionales.filter(b => b.servicios || b.arriendo).length ? d.profesionales.filter(b => b.servicios || b.arriendo).map(b => `<div class="card">
+      <div class="barb"><div><b>${esc(b.nombre)}</b><div class="muted">${b.tipo === 'Arriendo' ? 'Arriendo ' + pesosF(b.arriendoSemanal) + '/semana' : 'Comisión ' + b.pct + '% para el profesional'} · ${b.servicios} serv.</div></div></div>
+      <div class="lineas">
+        <div><span>Cobrado</span><b>${pesosF(b.cobrado)}</b></div>
+        <div><span>${b.tipo === 'Arriendo' ? 'Sus servicios − arriendo' : 'Su comisión'}</span><b>${pesosF(b.parte)}</b></div>
+        <div><span>Propinas</span><b>${pesosF(b.propinas)}</b></div>
+        <div><span>${b.pagar < 0 ? 'Debe al salón' : 'Se le paga'}</span><b>${pesosF(Math.abs(b.pagar))}</b></div>
+        <div class="fuerte"><span>Para el salón${b.tipo === 'Arriendo' ? ' (arriendo)' : ''}</span><b>${pesosF(b.barberia)}</b></div>
+      </div></div>`).join('') : '<p class="muted">Sin profesionales en este periodo.</p>'}
+    ${F.profesional === '*' ? '<button class="btn sec" id="liq">Guardar liquidación de este periodo en la hoja</button>' : ''}
+    <div class="card"><b>Medios de pago</b>${d.medios.length ? d.medios.map(m => `<div class="lineas"><div><span>${esc(m.medio)}</span><b>${pesosF(m.valor)}</b></div></div>`).join('') : '<p class="muted">Sin cobros.</p>'}</div>
+    ${d.serviciosTop.length ? `<div class="card"><b>Servicios más vendidos</b>${d.serviciosTop.map(s => `<div class="lineas"><div><span>${esc(s.nombre)} · ${s.cantidad}</span><b>${pesosF(s.valor)}</b></div></div>`).join('')}</div>` : ''}
+    ${d.porDia.length > 1 ? `<div class="card"><b>Ingresos por día</b>${d.porDia.map(x => `<div class="barra"><span>${esc(fechaCorta(x.fecha))}</span><div><i style="width:${Math.max(2, Math.round(x.valor / maxDia * 100))}%"></i></div><b>${pesosF(x.valor)}</b></div>`).join('')}</div>` : ''}
+    <div class="card"><b>Últimos cobros</b>${d.cobros.length ? d.cobros.map(x => `<div class="cita"><div class="cita-top"><b>${esc(fechaCorta(x.fecha))} · ${esc(h12(x.hora))}</b><b>${pesosF(x.valor + x.propina)}</b></div>
+      <div class="muted">${esc(x.cliente)} · ${esc(x.concepto)}${x.profesional ? ' · ' + esc(x.profesional) : ''} · ${esc(x.medio)}${x.propina ? ' · propina ' + pesosF(x.propina) : ''}${x.factura ? ' · ' + esc(x.factura) : ''}</div></div>`).join('') : '<p class="muted">Todavía no hay cobros en este periodo. Se registran al confirmar el pago en Facturar.</p>'}</div>`;
+  bindNav();
+  document.querySelectorAll('[data-rango]').forEach(b => b.onclick = () => { F.rango = b.dataset.rango; if (F.rango === 'otro') vistaFinanzas(); else cargarFinanzas(); });
+  const otro = () => { if ($('#f-desde').value && $('#f-hasta').value) { F.desde = $('#f-desde').value; F.hasta = $('#f-hasta').value; cargarFinanzas(); } };
+  $('#f-desde').onchange = otro; $('#f-hasta').onchange = otro;
+  $('#f-barbf').onchange = e => { F.profesional = e.target.value; cargarFinanzas(); };
+  if ($('#liq')) $('#liq').onclick = async () => {
+    if (!confirm('¿Guardar la liquidación del ' + d.periodoTxt + ' en la pestaña Liquidaciones?')) return;
+    const b = $('#liq'); b.disabled = true;
+    try { const r = await api({ a: 'aGuardarLiquidacion', token: S.token, desde: d.desde, hasta: d.hasta }); vistaFinanzas(r.texto); }
+    catch (e) { b.disabled = false; alert(e.message); }
+  };
+}
+
+/* ---------- Formulario ---------- */
+function filaDia(d, valor) {
+  const libre = !/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/.test(valor || '');
+  const [a, b] = libre ? ['09:00', '19:00'] : valor.split('-');
+  return `<div class="dia ${libre ? 'off' : ''}" data-dia="${d}">
+    <b>${d}</b>
+    <input type="time" step="900" value="${a}" aria-label="${d} desde" ${libre ? 'disabled' : ''}>
+    <span class="muted">a</span>
+    <input type="time" step="900" value="${b}" aria-label="${d} hasta" ${libre ? 'disabled' : ''}>
+    <label class="libre"><input type="checkbox" ${libre ? 'checked' : ''}> Libre</label>
+  </div>`;
+}
+
+function vistaForm(b) {
+  const nuevo = !b;
+  b = b || { nombre: '', whatsapp: '', tipo: 'Comisión', pct: 50, arriendo: '', activo: true, especialidades: [],
+             horario: { Lun: '09:00-19:00', Mar: '09:00-19:00', 'Mié': '09:00-19:00', Jue: '09:00-19:00', Vie: '09:00-19:00', 'Sáb': '09:00-19:00', Dom: 'Libre' } };
+  $('#app').innerHTML = `
+    <div class="top"><button class="link" id="volver">← Volver</button><button class="link" id="salir">Salir</button></div>
+    <h2>${nuevo ? 'Nuevo profesional' : 'Editar ' + esc(b.nombre)}</h2>
+    <div class="card">
+      <label for="f-nombre">Nombre y apellido</label>
+      <input id="f-nombre" maxlength="60" value="${esc(b.nombre)}" placeholder="Laura Gómez">
+      <label for="f-tel">WhatsApp</label>
+      <input id="f-tel" type="tel" inputmode="numeric" value="${esc(b.whatsapp)}" placeholder="300 123 4567">
+      <div class="fila">
+        <div><label for="f-tipo">Tipo de pago</label>
+          <select id="f-tipo"><option ${b.tipo !== 'Arriendo' ? 'selected' : ''}>Comisión</option><option ${b.tipo === 'Arriendo' ? 'selected' : ''}>Arriendo</option></select></div>
+        <div id="c-pct"><label for="f-pct">% comisión</label><input id="f-pct" type="number" min="0" max="100" value="${esc(b.pct)}"></div>
+        <div id="c-arr"><label for="f-arr">Arriendo semanal</label><input id="f-arr" type="number" min="0" step="10000" value="${esc(b.arriendo)}" placeholder="300000"></div>
+      </div>
+      <label class="switch"><input type="checkbox" id="f-activo" ${b.activo ? 'checked' : ''}> Activo (aparece en la web y puede entrar al portal)</label>
+    </div>
+    <div class="card">
+      <b>Especialidades</b>
+      <p class="muted" style="margin:4px 0 0">Solo recibe citas de los servicios de estas categorías. Sin ninguna marcada = hace todos.</p>
+      <div class="chk-grid" id="f-esp">${[...new Set((L.categorias || []).concat(b.especialidades || []))].map(ct => `<label><input type="checkbox" value="${esc(ct)}" ${(b.especialidades || []).indexOf(ct) >= 0 ? 'checked' : ''}> ${esc(ct)}</label>`).join('')}</div>
+    </div>
+    <div class="card">
+      <b>Horario base</b>
+      <p class="muted" style="margin:4px 0 0">Se copia a sus turnos con "Copiar su horario base" (Agenda → Turnos).</p>
+      ${DIAS.map(d => filaDia(d, b.horario[d])).join('')}
+      <div class="acciones"><button class="btn mini sec" id="copiar">Copiar lunes a todos</button></div>
+    </div>
+    <div id="msg" class="err"></div>
+    <button class="btn" id="guardar">${nuevo ? 'Crear profesional' : 'Guardar cambios'}</button>`;
+  const tipo = () => { const a = $('#f-tipo').value === 'Arriendo'; $('#c-pct').classList.toggle('hidden', a); $('#c-arr').classList.toggle('hidden', !a); };
+  $('#f-tipo').onchange = tipo; tipo();
+  $('#volver').onclick = () => vistaLista();
+  $('#salir').onclick = () => salir();
+  document.querySelectorAll('.dia .libre input').forEach(c => c.onchange = () => {
+    const fila = c.closest('.dia');
+    fila.classList.toggle('off', c.checked);
+    fila.querySelectorAll('input[type=time]').forEach(t => t.disabled = c.checked);
+  });
+  $('#copiar').onclick = () => {
+    const lun = document.querySelector('[data-dia="Lun"]');
+    const t = lun.querySelectorAll('input[type=time]'), libre = lun.querySelector('.libre input').checked;
+    document.querySelectorAll('.dia').forEach(f => {
+      if (f === lun || f.dataset.dia === 'Dom') return;
+      const x = f.querySelectorAll('input[type=time]');
+      x[0].value = t[0].value; x[1].value = t[1].value;
+      const c = f.querySelector('.libre input'); c.checked = libre; c.onchange();
+    });
+  };
+  $('#guardar').onclick = async () => {
+    const horario = {};
+    document.querySelectorAll('.dia').forEach(f => {
+      const t = f.querySelectorAll('input[type=time]');
+      horario[f.dataset.dia] = f.querySelector('.libre input').checked ? 'Libre' : t[0].value + '-' + t[1].value;
+    });
+    const btn = $('#guardar'); btn.disabled = true; btn.textContent = 'Guardando…'; $('#msg').textContent = '';
+    try {
+      const r = await api({ a: 'aGuardarProfesional', token: S.token, id: nuevo ? '' : b.id, nombre: $('#f-nombre').value, whatsapp: $('#f-tel').value,
+        tipo: $('#f-tipo').value, pct: $('#f-pct').value, arriendo: $('#f-arr').value, activo: $('#f-activo').checked, horario,
+        especialidades: [...document.querySelectorAll('#f-esp input:checked')].map(i => i.value) });
+      if (r.nuevo) vistaCreado(r); else cargar(r.texto);
+    } catch (e) { btn.disabled = false; btn.textContent = nuevo ? 'Crear profesional' : 'Guardar cambios'; $('#msg').textContent = e.message; }
+  };
+}
+
+function vistaCreado(r) {
+  $('#app').innerHTML = `
+    <h2>Profesional creado</h2>
+    <div class="card exito">
+      <b>${esc(r.nombre)}</b> <span class="muted">(${esc(r.id)})</span>
+      <div class="muted" style="margin-top:8px">PIN del portal</div>
+      <div class="grande">${esc(r.pin)}</div>
+      <p class="muted">Entrégale el PIN y el enlace del portal. Ahí sube sus fotos, ve su agenda y marca "Finalizado" al terminar cada servicio. Sus turnos los asignas tú en Agenda → Turnos.</p>
+    </div>
+    ${r.whatsapp ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(r.whatsapp, msgBienvenida(r.nombre, r.pin)))}">Enviarle el acceso por WhatsApp</a>` : ''}
+    <button class="btn sec" id="lista">Volver a la lista</button>`;
+  $('#lista').onclick = () => cargar();
+}
+
+if (S && S.token && S.hasta > Date.now()) cargarAgenda(); else vistaLogin();
+</script>
+</body>
+</html>

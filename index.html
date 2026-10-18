@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beauty Glam · Reserva tu cita</title>
+<meta name="description" content="Reserva tu cita en el salón en segundos.">
+<meta name="theme-color" content="#17110e">
+<link rel="icon" href="image.jpg">
+<link rel="apple-touch-icon" href="image.jpg">
+<meta property="og:image" content="image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #17110e; --card: #221915; --card2: #2e231e; --line: #403128;
+    --txt: #f6efea; --sub: #c4b1a6; --acc: #cfb2a5; --acc-txt: #2b170f;
+    --ok: #2fbf71; --err: #ff6b6b; --wa: #25d366;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt); font: 15px/1.45 Inter, system-ui, sans-serif; }
+  button, input { font: inherit; color: inherit; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 96px; }
+
+  header { padding: 22px 16px 8px; text-align: center; background:
+    linear-gradient(90deg, #7a5f52, #cfb2a5, #7a5f52) top / 100% 4px no-repeat; }
+  .logo { margin: 6px auto 0; }
+  .logo img { width: min(240px, 64vw); height: auto; display: block; margin: 0 auto; }
+  .lema { color: var(--sub); font-size: 13px; margin-top: 2px; }
+
+  nav { position: sticky; top: 0; z-index: 5; background: rgba(1,1,1,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; gap: 6px; padding: 10px 16px; }
+  nav button { flex: 1; border: 0; background: transparent; padding: 10px 6px; border-radius: 10px; color: var(--sub); font-weight: 600; cursor: pointer; }
+  nav button.on { background: var(--acc); color: var(--acc-txt); }
+
+  h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 700; letter-spacing: .2px; font-size: 29px; margin: 22px 0 10px; }
+  h2 small { display: block; margin: 2px 0 0 !important; font-weight: 400; font-family: Inter, sans-serif; font-size: 13px; color: var(--sub); letter-spacing: 0; margin-left: 6px; }
+  .grid { display: grid; gap: 8px; }
+  .opt { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left;
+         background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; }
+  .opt b { font-weight: 600; }
+  .opt .meta { color: var(--sub); font-size: 13px; white-space: nowrap; }
+  .opt-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .opt .desc { color: var(--sub); font-size: 13px; font-weight: 400; }
+  .opt.on { border-color: var(--acc); background: #33251f; }
+  .barb { display: flex; gap: 12px; align-items: center; width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px; cursor: pointer; }
+  .barb.on { border-color: var(--acc); background: #33251f; }
+  .barb .foto { flex: 0 0 60px; width: 60px; height: 60px; border-radius: 50%; background: #2e231e center / cover no-repeat; border: 2px solid var(--acc);
+                display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; color: var(--acc); }
+  .barb .datos { flex: 1; min-width: 0; }
+  .barb .datos b { display: block; font-size: 16px; }
+  .barb .dir { color: var(--sub); font-size: 13px; }
+  .mapa { display: inline-block; margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--acc); text-decoration: none; border: 1px solid #7a5f52; border-radius: 8px; padding: 4px 9px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; min-width: 64px; text-align: center; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; cursor: pointer; }
+  .chip small { display: block; color: var(--sub); font-size: 11px; text-transform: uppercase; }
+  .chip b { font-size: 18px; }
+  .chip.on { border-color: var(--acc); background: #33251f; }
+  .chip:disabled { opacity: .35; cursor: default; }
+  .horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .horas .chip { min-width: 0; padding: 10px 4px; font-weight: 600; }
+
+  label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 5px; }
+  input { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 14px; outline: none; }
+  input:focus { border-color: var(--acc); }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 16px; cursor: pointer;
+         background: var(--acc); color: var(--acc-txt); margin-top: 16px; text-align: center; text-decoration: none; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.sec { background: var(--card2); color: var(--txt); }
+  .btn.wa { background: var(--wa); color: #06210f; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 12px; }
+  .resumen div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+  .resumen div:last-child { border: 0; }
+  .resumen span { color: var(--sub); }
+  .ok { border-color: #1f6b43; background: #10261a; }
+  .err { color: var(--err); font-size: 14px; margin-top: 10px; }
+  .muted { color: var(--sub); font-size: 13px; }
+  .codigo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 40px; letter-spacing: 2px; color: var(--acc); line-height: 1.1; }
+  .aviso { border: 1px solid #7a5f52; background: #261b17; color: #ead8cf; border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-top: 22px; }
+  .plan h3 { margin: 0; font-size: 18px; }
+  .plan .precio { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 34px; color: var(--acc); line-height: 1; margin: 6px 0; }
+  .plan ul { margin: 8px 0 0; padding-left: 18px; color: var(--sub); }
+  .info { color: var(--sub); font-size: 13px; text-align: center; margin-top: 28px; }
+  .info a { color: var(--sub); }
+  .soporte { position: fixed; right: 16px; bottom: 18px; z-index: 6; background: var(--wa); color: #06210f; border-radius: 30px; padding: 12px 16px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+  .cargando { color: var(--sub); padding: 30px 0; text-align: center; }
+  .carrusel { position: relative; margin-top: 10px; }
+  .pista { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: 14px; background: var(--card); }
+  .pista::-webkit-scrollbar { display: none; }
+  .pista img { flex: 0 0 100%; width: 100%; aspect-ratio: 4 / 5; max-height: 560px; object-fit: cover; scroll-snap-align: center; display: block; }
+  .pista.vacia { justify-content: center; align-items: center; aspect-ratio: 4 / 5; max-height: 560px; color: var(--sub); font-size: 14px; }
+  .flecha { position: absolute; top: calc(50% - 12px); transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; }
+  .flecha.izq { left: 8px; } .flecha.der { right: 8px; }
+  .puntos { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+  .puntos span { width: 7px; height: 7px; border-radius: 50%; background: #444; }
+  .puntos span.on { background: var(--acc); }
+  .link { background: none; border: 0; color: var(--acc); cursor: pointer; padding: 10px 0 0; font-weight: 600; font-size: 14px; }
+  .hidden { display: none !important; }
+  .cats { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; margin-bottom: 10px; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cat { flex: 0 0 auto; border: 1.5px solid var(--line); background: var(--card); color: var(--sub); border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+  .cat.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); }
+  .opt { justify-content: flex-start; }
+  .opt .opt-txt { flex: 1; }
+  .opt .meta { text-align: right; line-height: 1.35; }
+  .check { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 7px; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--acc-txt); }
+  .opt.on .check { background: var(--acc); border-color: var(--acc); }
+  .badge { align-self: flex-start; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--acc); border: 1px solid #7a5f52; border-radius: 999px; padding: 2px 8px; }
+  .total { border-color: #7a5f52; }
+  .lista-elegidos { display: flex; flex-wrap: wrap; gap: 6px; }
+  .lista-elegidos .tag { background: var(--card2); border-radius: 999px; padding: 4px 4px 4px 11px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+  .lista-elegidos .tag button { border: 0; background: transparent; color: var(--sub); font-size: 17px; line-height: 1; cursor: pointer; padding: 0 6px; }
+  .suma { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 10px 0 4px; }
+  .suma b { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; color: var(--acc); }
+  .abono { border-color: #7a5f52; background: #261b17; }
+  .abono p { margin: 8px 0 0; }
+  @media (prefers-reduced-motion: no-preference) { .vista { animation: entra .18s ease-out; } @keyframes entra { from { opacity: 0; transform: translateY(4px); } } }
+</style>
+</head>
+<body>
+<header>
+  <h1 class="logo"><img src="logo.png" alt="Beauty Glam by Nathaly Torres" width="520" height="520"></h1>
+  <div class="lema" id="lema"></div>
+</header>
+<nav><div class="wrap">
+  <button data-tab="reservar" class="on">Reservar</button>
+  <button data-tab="micita">Mi cita</button>
+  <button data-tab="planes">Planes</button>
+</div></nav>
+
+<main class="wrap">
+  <section id="v-reservar" class="vista"><div class="cargando">Cargando…</div></section>
+  <section id="v-micita" class="vista hidden"></section>
+  <section id="v-planes" class="vista hidden"></section>
+
+  <div class="aviso"><b>Aviso:</b> solo pedimos abono en los servicios que lo indican, y solo a los datos que aparecen en esta página al reservar. Nunca te pedimos claves ni datos de tu banco. Si alguien te escribe desde otro número pidiendo dinero, no somos nosotros.</div>
+  <div class="info" id="info"></div>
+</main>
+<a class="soporte hidden" id="soporte" target="_blank" rel="noopener">WhatsApp</a>
+
+<script>
+/* Dirección de la API (Apps Script → Implementar → Aplicación web). */
+const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pesos = v => '$' + Math.round(v || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const guardar = (k, v) => { try { localStorage.setItem('bglam_' + k, JSON.stringify(v)); } catch (e) {} };
+const leerLS = k => { try { return JSON.parse(localStorage.getItem('bglam_' + k)); } catch (e) { return null; } };
+
+let D = null;               // datos del negocio
+const R = { servicios: [], cat: null, profesional: null, fecha: null, hora: null, horaCon: '' };
+
+/* Llamadas a la API con reintentos (tras publicar, Google responde error unos minutos). */
+async function api(params, post) {
+  let ultimo;
+  for (let i = 0; i < 5; i++) {
+    try {
+      const r = post
+        ? await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(params) })
+        : await fetch(API + '?' + new URLSearchParams(params));
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!j.ok) { const e = new Error(j.error || 'Error'); e.final = true; throw e; }
+      return j;
+    } catch (e) {
+      if (e.final) throw e;
+      ultimo = e;
+      await new Promise(res => setTimeout(res, 800 * (i + 1)));
+    }
+  }
+  throw new Error('No pudimos conectar. Revisa tu internet e inténtalo de nuevo.');
+}
+
+const waLink = (tel, txt) => 'https://wa.me/' + tel + '?text=' + encodeURIComponent(txt);
+function fechaISO(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function deISO(s) { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function cerrado(h) { return !/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/.test(String(h).trim()); }
+function hora12(h) { const [a, b] = h.split(':').map(Number); return (a % 12 || 12) + ':' + String(b).padStart(2, '0') + (a < 12 ? ' a. m.' : ' p. m.'); }
+
+/* ---------- Pestañas ---------- */
+function tab(nombre) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === nombre));
+  ['reservar', 'micita', 'planes'].forEach(t => $('#v-' + t).classList.toggle('hidden', t !== nombre));
+  if (nombre === 'micita' && !$('#v-micita').innerHTML) vistaMiCita();
+  if (nombre === 'planes') vistaPlanes();
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => tab(b.dataset.tab));
+
+/* ---------- Reservar ---------- */
+let FOTOS = leerLS('fotos') || {}; // { B01: { v: versión, src: 'data:image/...' } }
+
+function fotoHtml(b) {
+  const f = FOTOS[b.id];
+  const ok = b.foto && f && f.v === b.foto && /^data:image\//.test(f.src);
+  return ok
+    ? `<div class="foto" data-foto="${esc(b.id)}" role="img" aria-label="Foto de ${esc(b.nombre)}" style="background-image:url('${f.src}')"></div>`
+    : `<div class="foto" data-foto="${esc(b.id)}" aria-hidden="true">${esc(String(b.nombre || '?').trim().charAt(0).toUpperCase())}</div>`;
+}
+
+async function cargarFotos() {
+  const falta = D.profesionales.some(b => b.foto && (!FOTOS[b.id] || FOTOS[b.id].v !== b.foto));
+  if (!falta) return;
+  try {
+    const r = await api({ a: 'fotos' });
+    const nuevo = {};
+    D.profesionales.forEach(b => { if (b.foto && r.fotos[b.id]) nuevo[b.id] = { v: b.foto, src: r.fotos[b.id] }; });
+    FOTOS = nuevo;
+    guardar('fotos', FOTOS);
+    document.querySelectorAll('[data-foto]').forEach(el => {
+      const b = D.profesionales.find(x => x.id === el.dataset.foto);
+      if (b) el.outerHTML = fotoHtml(b);
+    });
+  } catch (e) { /* sin fotos, quedan las iniciales */ }
+}
+
+const mapaBtn = b => b.mapa ? `<a class="mapa" href="${esc(b.mapa)}" target="_blank" rel="noopener" data-mapa>Cómo llegar ↗</a>` : '';
+
+const GAL = {}; // fotos de trabajos por profesional: id -> [{ id, src }] | 'cargando'
+
+function galeriaHtml(b) {
+  const f = GAL[b.id];
+  if (f === undefined) cargarGaleria(b);
+  if (!Array.isArray(f)) return '<div class="pista vacia">Cargando fotos…</div>';
+  if (!f.length) return '';
+  return `<div class="pista" id="pista" tabindex="0" aria-label="Trabajos de ${esc(b.nombre)}">${f.map((x, i) =>
+      `<img src="${x.src}" alt="Trabajo ${i + 1} de ${esc(b.nombre)}"${i ? ' loading="lazy"' : ''}>`).join('')}</div>` +
+    (f.length > 1 ? `<button class="flecha izq" data-dir="-1" aria-label="Foto anterior">‹</button><button class="flecha der" data-dir="1" aria-label="Foto siguiente">›</button>
+      <div class="puntos">${f.map((x, i) => `<span class="${i ? '' : 'on'}"></span>`).join('')}</div>` : '');
+}
+
+async function cargarGaleria(b) {
+  GAL[b.id] = 'cargando';
+  try { const r = await api({ a: 'galeria', b: b.id }); GAL[b.id] = r.fotos.filter(x => /^data:image\//.test(x.src)); }
+  catch (e) { GAL[b.id] = []; }
+  const caja = $('#galeria');
+  if (R.profesional === b.id && caja) {
+    if (GAL[b.id].length) { caja.innerHTML = galeriaHtml(b); iniciarCarrusel(); } else caja.remove();
+  }
+}
+
+function iniciarCarrusel(pos) {
+  const p = $('#pista');
+  if (!p) return;
+  if (pos) p.scrollLeft = pos;
+  const puntos = document.querySelectorAll('.puntos span');
+  const actual = () => Math.round(p.scrollLeft / (p.clientWidth || 1));
+  const marcar = () => puntos.forEach((s, i) => s.classList.toggle('on', i === actual()));
+  p.onscroll = marcar;
+  marcar();
+  document.querySelectorAll('.flecha').forEach(b => b.onclick = () => {
+    const n = p.children.length, i = (actual() + Number(b.dataset.dir) + n) % n;
+    p.scrollTo({ left: i * p.clientWidth, behavior: 'smooth' });
+  });
+}
+
+const dur = m => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
+const precioTxt = (v, variable) => (variable ? 'desde ' : '') + pesos(v);
+
+/** Suma de los servicios elegidos. */
+function elegidos() {
+  const l = R.servicios.map(id => D.servicios.find(s => s.id === id)).filter(Boolean);
+  return { l, precio: l.reduce((t, s) => t + s.precio, 0), dur: l.reduce((t, s) => t + s.dur, 0),
+    abono: l.reduce((t, s) => t + (s.abono || 0), 0), variable: l.some(s => s.variable) };
+}
+
+/** Profesionales que hacen TODOS los servicios elegidos. */
+function capaces() { return D.profesionales.filter(b => R.servicios.every(id => (b.servicios || []).indexOf(id) >= 0)); }
+
+function vistaReservar() {
+  const v = $('#v-reservar');
+  R.servicios = R.servicios.filter(id => D.servicios.some(s => s.id === id));
+  const E = elegidos();
+  const aptas = R.servicios.length ? capaces() : [];
+  if (R.profesional && R.profesional !== '*' && !aptas.some(b => b.id === R.profesional)) { R.profesional = null; R.fecha = null; R.hora = null; }
+  if (R.profesional === '*' && aptas.length < 2) R.profesional = aptas.length === 1 ? aptas[0].id : null;
+  const barb = D.profesionales.find(b => b.id === R.profesional);
+
+  // 1 · Servicios por categoría
+  let html = '<h2>1 · ¿Qué te vas a hacer? <small>puedes elegir varios</small></h2>';
+  const cats = (D.categorias && D.categorias.length ? D.categorias : ['Servicios']);
+  if (!R.cat || cats.indexOf(R.cat) < 0) R.cat = cats[0];
+  html += '<div class="cats" role="tablist">' + cats.map(c => `<button class="cat ${c === R.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}${R.servicios.some(id => (D.servicios.find(s => s.id === id) || {}).cat === c) ? ' •' : ''}</button>`).join('') + '</div>';
+  const enCat = D.servicios.filter(s => (D.categorias && D.categorias.length ? s.cat === R.cat : true));
+  html += '<div class="grid">' + enCat.map(s => {
+    const on = R.servicios.indexOf(s.id) >= 0;
+    return `<button class="opt ${on ? 'on' : ''}" data-s="${esc(s.id)}" aria-pressed="${on}">
+      <span class="check" aria-hidden="true">${on ? '✓' : ''}</span>
+      <span class="opt-txt"><b>${esc(s.nombre)}</b>${s.desc ? `<span class="desc">${esc(s.desc)}</span>` : ''}
+        ${s.abono ? `<span class="badge">Abono ${pesos(s.abono)} para reservar</span>` : ''}</span>
+      <span class="meta">${precioTxt(s.precio, s.variable)}<br>${dur(s.dur)}</span></button>`;
+  }).join('') + '</div>';
+  if (E.l.length) {
+    html += `<div class="card total">
+      <div class="lista-elegidos">${E.l.map(s => `<span class="tag">${esc(s.nombre)} <button data-quitar="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">×</button></span>`).join('')}</div>
+      <div class="suma"><span>${E.l.length} ${E.l.length === 1 ? 'servicio' : 'servicios'} · ${dur(E.dur)}</span><b>${precioTxt(E.precio, E.variable)}</b></div>
+      ${E.abono ? `<div class="muted">Para confirmar esta cita se pide un abono de <b>${pesos(E.abono)}</b>, que se descuenta del total.</div>` : ''}
+    </div>`;
+  }
+
+  // 2 · Profesional
+  if (E.l.length) {
+    html += '<h2 id="paso2">2 · ¿Con quién?</h2>';
+    if (!aptas.length) {
+      html += '<p class="card muted">Ninguna profesional hace todos estos servicios en la misma cita. Quita alguno y resérvalo aparte.</p>';
+    } else {
+      const lista = barb ? [barb] : aptas;
+      html += '<div class="grid">';
+      if (!barb && aptas.length > 1) html += `<div class="barb ${R.profesional === '*' ? 'on' : ''}" data-b="*" role="button" tabindex="0"><div class="foto" aria-hidden="true">✦</div><div class="datos"><b>La primera disponible</b><div class="dir">Te mostramos todas las horas libres</div></div></div>`;
+      html += lista.map(b => `
+        <div class="barb ${b.id === R.profesional ? 'on' : ''}" data-b="${esc(b.id)}" role="button" tabindex="0" aria-pressed="${b.id === R.profesional}">
+          ${fotoHtml(b)}
+          <div class="datos">
+            <b>${esc(b.nombre)}</b>
+            <div class="dir">${esc((b.especialidades || []).join(' · ') || 'Todos los servicios')}</div>
+            ${mapaBtn(b)}
+          </div>
+        </div>`).join('') + '</div>';
+      if (barb) html += '<button class="link" id="cambiar">← Ver todas</button>' + (barb.galeria ? '<div id="galeria" class="carrusel">' + galeriaHtml(barb) + '</div>' : '');
+    }
+  }
+
+  const listo = E.l.length && R.profesional && aptas.length;
+  if (listo) {
+    html += '<h2>3 · Día</h2><div class="chips">';
+    const hoy = deISO(D.hoy);
+    for (let i = 0; i <= D.dias; i++) {
+      const d = new Date(hoy); d.setDate(d.getDate() + i);
+      const iso = fechaISO(d);
+      const off = cerrado(D.horario[d.getDay()]);
+      html += `<button class="chip ${iso === R.fecha ? 'on' : ''}" data-f="${iso}" ${off ? 'disabled' : ''}><small>${i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MESES[d.getMonth()]}</small></button>`;
+    }
+    html += '</div>';
+  }
+  if (listo && R.fecha) html += '<h2>4 · Hora</h2><div id="horas" class="cargando">Buscando horarios libres…</div>';
+  if (listo && R.fecha && R.hora) {
+    const yo = leerLS('cliente') || {};
+    const quien = barb ? barb.nombre : (R.horaCon || 'La primera disponible');
+    html += `<h2>5 · Tus datos</h2>
+      <div class="card resumen">
+        <div><span>Servicios</span><b>${esc(E.l.map(s => s.nombre).join(' + '))}</b></div>
+        <div><span>Con</span><b>${esc(quien)}</b></div>
+        <div><span>Cuándo</span><b>${esc(fechaLarga(R.fecha))}, ${hora12(R.hora)} · ${dur(E.dur)}</b></div>
+        <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
+        ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
+      </div>
+      <label for="nombre">Nombre</label><input id="nombre" autocomplete="name" value="${esc(yo.nombre || '')}" placeholder="Tu nombre">
+      <label for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="numeric" autocomplete="tel" value="${esc(yo.tel || '')}" placeholder="300 123 4567">
+      <div id="err" class="err"></div>
+      <button class="btn" id="confirmar">${E.abono ? 'Reservar y ver cómo pagar el abono' : 'Confirmar reserva'}</button>
+      <p class="muted">${E.variable ? 'El valor final depende del largo y del estado de tu cabello o uñas. ' : ''}${E.abono ? 'El resto lo pagas en el salón. ' : 'Pagas en el salón. '}${esc(D.advertencia)}</p>`;
+  }
+  const pistaPrev = $('#pista'), posPrev = pistaPrev ? pistaPrev.scrollLeft : 0;
+  v.innerHTML = html;
+  iniciarCarrusel(posPrev);
+  v.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { R.cat = b.dataset.cat; vistaReservar(); });
+  v.querySelectorAll('[data-s]').forEach(b => b.onclick = () => {
+    const id = b.dataset.s, i = R.servicios.indexOf(id);
+    if (i >= 0) R.servicios.splice(i, 1);
+    else if (R.servicios.length >= 6) { alert('Máximo 6 servicios por cita.'); return; }
+    else R.servicios.push(id);
+    R.hora = null; vistaReservar();
+  });
+  v.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { R.servicios = R.servicios.filter(id => id !== b.dataset.quitar); R.hora = null; vistaReservar(); });
+  if ($('#cambiar')) $('#cambiar').onclick = () => { R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+  v.querySelectorAll('[data-b]').forEach(el => {
+    const elegir = () => {
+      const cambio = R.profesional !== el.dataset.b;
+      if (cambio) { R.profesional = el.dataset.b; R.fecha = null; R.hora = null; }
+      vistaReservar();
+      if (cambio) setTimeout(() => { const p = $('#paso2'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    };
+    el.onclick = e => { if (!e.target.closest('[data-mapa]')) elegir(); };
+    el.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('[data-mapa]')) { e.preventDefault(); elegir(); } };
+  });
+  v.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { R.fecha = b.dataset.f; R.hora = null; vistaReservar(); });
+  if (listo && R.fecha) cargarHoras();
+  if ($('#confirmar')) $('#confirmar').onclick = confirmar;
+}
+
+function fechaLarga(iso) {
+  const d = deISO(iso);
+  const n = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()];
+  return n + ' ' + d.getDate() + ' de ' + ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][d.getMonth()];
+}
+
+let pedidoHoras = 0;
+async function cargarHoras() {
+  const n = ++pedidoHoras;
+  const caja = $('#horas');
+  try {
+    const r = await api({ a: 'libres', fecha: R.fecha, profesional: R.profesional, servicio: R.servicios.join(',') });
+    if (n !== pedidoHoras || !$('#horas')) return;
+    if (!r.libres.length) { caja.className = 'muted'; caja.textContent = 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'; return; }
+    caja.className = 'horas';
+    caja.innerHTML = r.libres.map(s => `<button class="chip ${s.hora === R.hora ? 'on' : ''}" data-h="${s.hora}">${hora12(s.hora).replace(' ', '&nbsp;')}</button>`).join('');
+    caja.querySelectorAll('[data-h]').forEach(b => b.onclick = () => {
+      R.hora = b.dataset.h;
+      const s = r.libres.find(x => x.hora === R.hora);
+      R.horaCon = R.profesional === '*' && s ? s.profesionales.map(id => (D.profesionales.find(p => p.id === id) || {}).nombre).filter(Boolean)[0] || '' : '';
+      vistaReservar();
+      setTimeout(() => { const el = $('#nombre'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+    });
+  } catch (e) {
+    if (n === pedidoHoras && $('#horas')) { caja.className = 'err'; caja.textContent = e.message; }
+  }
+}
+
+async function confirmar() {
+  const nombre = $('#nombre').value.trim(), tel = $('#tel').value.replace(/\D/g, '');
+  if (nombre.length < 2) return ($('#err').textContent = 'Escribe tu nombre.');
+  if (tel.length < 10) return ($('#err').textContent = 'Escribe tu número de WhatsApp (10 dígitos).');
+  const btn = $('#confirmar'); btn.disabled = true; btn.textContent = 'Reservando…'; $('#err').textContent = '';
+  try {
+    const r = await api({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), profesional: R.profesional, fecha: R.fecha, hora: R.hora }, true);
+    guardar('cliente', { nombre, tel });
+    guardar('ultimaCita', { cita: r.cita, t: r.tel });
+    const enlace = location.origin + location.pathname + '?cita=' + r.cita + '&t=' + r.tel;
+    const waDest = r.waProfesional || D.whatsapp;
+    const msg = 'Hola, reservé en ' + D.negocio + ': ' + r.servicio + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + ' con ' + r.profesional + '. Código ' + r.cita + '.' +
+      (r.abono ? ' Te envío el comprobante del abono de ' + pesos(r.abono) + '.' : '');
+    $('#v-reservar').innerHTML = `
+      <h2>¡Reserva recibida!</h2>
+      <div class="card ok">
+        <div class="muted">Tu código</div><div class="codigo">${esc(r.cita)}</div>
+        <div class="resumen" style="margin-top:8px">
+          <div><span>Servicio</span><b>${esc(r.servicio)}</b></div>
+          <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
+          <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
+          <div><span>Cuándo</span><b>${esc(r.fechaTxt)}, ${esc(r.hora12)}</b></div>
+          <div><span>Total</span><b>${precioTxt(r.precio, r.variable)}</b></div>
+        </div>
+      </div>
+      ${r.abono ? `<div class="card abono">
+        <b>Paga el abono de ${pesos(r.abono)} para confirmar</b>
+        <p>${esc(r.datosAbono || 'Escríbenos por WhatsApp y te enviamos los datos para el abono.')}</p>
+        ${r.politicaAbono ? `<p class="muted">${esc(r.politicaAbono)}</p>` : ''}
+        <p class="muted">Tu cita queda <b>pendiente</b> hasta que el salón reciba el abono.</p>
+      </div>` : ''}
+      ${r.mapa ? `<a class="btn sec" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar (Google Maps)</a>` : ''}
+      <p class="muted">${r.abono ? 'Cuando recibamos el abono te confirmamos por WhatsApp.' : 'Te escribiremos por WhatsApp para confirmarla.'} Guarda este enlace para consultar o cancelar tu cita:</p>
+      <div class="card" style="word-break:break-all;font-size:13px">${esc(enlace)}</div>
+      ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
+      <button class="btn sec" id="otra">Hacer otra reserva</button>`;
+    $('#otra').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Confirmar reserva';
+    $('#err').textContent = e.message;
+    if (/ocupar/.test(e.message)) { R.hora = null; cargarHoras(); }
+  }
+}
+
+/* ---------- Mi cita ---------- */
+function vistaMiCita(cita, t) {
+  const ult = leerLS('ultimaCita') || {};
+  cita = cita || ult.cita || ''; t = t || ult.t || '';
+  $('#v-micita').innerHTML = `
+    <h2>Consulta tu cita</h2>
+    <label for="mc-cita">Código de la cita</label><input id="mc-cita" value="${esc(cita)}" placeholder="CT00012" autocapitalize="characters">
+    <label for="mc-tel">WhatsApp con el que reservaste</label><input id="mc-tel" type="tel" inputmode="numeric" value="${esc(t)}" placeholder="300 123 4567">
+    <div id="mc-err" class="err"></div>
+    <button class="btn" id="mc-buscar">Consultar</button>
+    <div id="mc-res"></div>`;
+  $('#mc-buscar').onclick = consultar;
+  if (cita && t) consultar();
+}
+
+async function consultar() {
+  const cita = $('#mc-cita').value.trim(), t = $('#mc-tel').value.replace(/\D/g, '');
+  if (!cita || t.length < 10) return ($('#mc-err').textContent = 'Escribe el código y tu WhatsApp.');
+  $('#mc-err').textContent = ''; $('#mc-res').innerHTML = '<div class="cargando">Buscando…</div>';
+  try {
+    const r = await api({ a: 'micita', cita, t });
+    $('#mc-res').innerHTML = `
+      <div class="card ${r.cancelable ? 'ok' : ''}">
+        <div class="muted">Hola ${esc(r.cliente)}, tu cita <b>${esc(r.cita)}</b> está:</div>
+        <div class="codigo" style="font-size:30px">${esc(r.estado)}</div>
+        <div class="resumen">
+          <div><span>Servicio</span><b>${esc(r.servicio)}</b></div>
+          <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
+          <div><span>Cuándo</span><b>${esc(r.fechaTxt)}, ${esc(r.hora12)}</b></div>
+          <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
+          ${r.abono ? `<div><span>Abono</span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' recibido ✓' : pesos(r.abono) + ' pendiente'}</b></div>` : ''}
+        </div>
+        ${r.abono && r.abonoPagado < r.abono && r.cancelable ? `<p class="muted">${esc(r.datosAbono)}</p>` : ''}
+        ${r.mapa ? `<a class="mapa" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar ↗</a>` : ''}
+      </div>
+      ${r.membresia ? `<div class="card"><b>${esc(r.membresia.plan)}</b><div class="muted">Te quedan ${r.membresia.restantes} servicios · vence el ${esc(r.membresia.vence)}</div></div>` : ''}
+      ${r.cancelable ? '<button class="btn sec" id="mc-cancelar">Cancelar esta cita</button>' : ''}`;
+    if ($('#mc-cancelar')) $('#mc-cancelar').onclick = async () => {
+      if (!confirm('¿Seguro que quieres cancelar la cita ' + r.cita + '?')) return;
+      const b = $('#mc-cancelar'); b.disabled = true; b.textContent = 'Cancelando…';
+      try { await api({ a: 'cancelar', cita, t }, true); consultar(); }
+      catch (e) { b.disabled = false; b.textContent = 'Cancelar esta cita'; $('#mc-err').textContent = e.message; }
+    };
+  } catch (e) { $('#mc-res').innerHTML = ''; $('#mc-err').textContent = e.message; }
+}
+
+/* ---------- Planes ---------- */
+function vistaPlanes() {
+  $('#v-planes').innerHTML = '<h2>Planes mensuales <small>pagas una vez, vienes varias</small></h2>' + D.planes.map(p => `
+    <div class="card plan">
+      <h3>${esc(p.nombre)}</h3>
+      <div class="precio">${pesos(p.precio)}</div>
+      <div class="muted">${p.usos} servicios · válido ${p.dias} días</div>
+      <ul>${p.incluye.map(s => '<li>' + esc(s) + '</li>').join('')}</ul>
+      ${D.whatsapp ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(D.whatsapp, 'Hola, quiero el ' + p.nombre + ' (' + pesos(p.precio) + ').'))}">Lo quiero</a>` : ''}
+    </div>`).join('') + '<p class="muted">El plan se activa en el salón al pagar.</p>';
+}
+
+/* ---------- Inicio ---------- */
+function pintarDatos() {
+  document.title = D.negocio + ' · Reserva tu cita';
+  $('#lema').textContent = D.ciudad || '';
+  const horas = D.horario.map((h, i) => DIAS[i] + ' ' + (cerrado(h) ? 'cerrado' : h.replace('-', '–'))).slice(1).concat(DIAS[0] + ' ' + (cerrado(D.horario[0]) ? 'cerrado' : D.horario[0].replace('-', '–')));
+  $('#info').innerHTML = esc(D.direccion) + (D.ciudad ? ', ' + esc(D.ciudad) : '') + '<br>' + esc(horas.join(' · '));
+  if (D.whatsapp) { const s = $('#soporte'); s.href = waLink(D.whatsapp, 'Hola, tengo una pregunta.'); s.classList.remove('hidden'); }
+}
+
+(async function iniciar() {
+  const q = new URLSearchParams(location.search);
+  const previo = leerLS('datos');
+  if (previo) { D = previo; D.hoy = fechaISO(new Date()); pintarDatos(); vistaReservar(); }
+  try {
+    const r = await api({ a: 'datos' });
+    D = r; guardar('datos', r); pintarDatos();
+    if (!q.get('cita')) vistaReservar();
+    cargarFotos();
+  } catch (e) {
+    if (!previo) $('#v-reservar').innerHTML = '<div class="err">' + esc(e.message) + '</div><button class="btn sec" onclick="location.reload()">Reintentar</button>';
+  }
+  if (q.get('cita') && D) { tab('micita'); vistaMiCita(q.get('cita'), q.get('t')); }
+})();
+</script>
+</body>
+</html>

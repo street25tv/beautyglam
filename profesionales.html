@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beauty Glam · Portal del profesional</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#17110e">
+<link rel="icon" href="image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #17110e; --card: #221915; --card2: #2e231e; --line: #403128; --txt: #f6efea; --sub: #c4b1a6;
+          --acc: #cfb2a5; --acc-txt: #2b170f; --ok: #2fbf71; --err: #ff6b6b; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt); font: 15px/1.45 Inter, system-ui, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 60px; }
+  header { text-align: center; padding: 14px 16px 4px; background: linear-gradient(90deg, #7a5f52, #cfb2a5, #7a5f52) top / 100% 4px no-repeat; }
+  header img { width: min(150px, 46vw); height: auto; margin-top: 8px; display: block; margin-inline: auto; }
+  .titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; letter-spacing: 1px; }
+  h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 700; letter-spacing: .2px; font-size: 24px; margin: 20px 0 8px; }
+  label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 5px; }
+  input, select { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; outline: none; }
+  input:focus, select:focus { border-color: var(--acc); }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px; font-weight: 700; font-size: 16px; cursor: pointer;
+         background: var(--acc); color: var(--acc-txt); margin-top: 14px; text-align: center; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.sec { background: var(--card2); color: var(--txt); }
+  .btn.mini { display: inline-block; width: auto; padding: 9px 12px; font-size: 14px; margin: 0; }
+  .btn.fin { background: var(--ok); color: #04170c; margin-top: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-top: 10px; }
+  .muted { color: var(--sub); font-size: 13px; }
+  .err { color: var(--err); font-size: 14px; margin-top: 10px; }
+  .okmsg { color: var(--ok); font-size: 14px; margin-top: 10px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .link { background: none; border: 0; color: var(--sub); text-decoration: underline; cursor: pointer; padding: 6px; }
+  .tabs { display: flex; gap: 6px; margin-top: 10px; }
+  .tabs button { flex: 1; border: 0; background: var(--card); padding: 11px 4px; border-radius: 10px; color: var(--sub); font-weight: 600; cursor: pointer; }
+  .tabs button.on { background: var(--acc); color: var(--acc-txt); }
+  .dias { display: flex; gap: 6px; overflow-x: auto; margin-top: 14px; padding-bottom: 4px; scrollbar-width: none; }
+  .dias::-webkit-scrollbar { display: none; }
+  .dia { flex: 0 0 64px; text-align: center; background: var(--card); border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 2px; cursor: pointer; }
+  .dia small { display: block; color: var(--sub); font-size: 11px; text-transform: uppercase; }
+  .dia b { font-size: 18px; display: block; }
+  .dia i { display: block; font-style: normal; font-size: 11px; color: var(--sub); }
+  .dia.on { border-color: var(--acc); background: #33251f; }
+  .cita { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+  .cita:first-of-type { border-top: 0; margin-top: 4px; padding-top: 4px; }
+  .cita-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .cita-top b { font-size: 17px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .tag.Pendiente { background: #2b1d0f; color: #ff9f43; } .tag.Confirmada { background: #33251f; color: var(--acc); }
+  .tag.Finalizada { background: #10261a; color: var(--ok); } .tag.Atendida { background: #2e231e; color: var(--sub); }
+  .tag.No { background: #2a1414; color: var(--err); }
+  .resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+  .resumen div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
+  .resumen b { display: block; font-size: 22px; } .resumen span { color: var(--sub); font-size: 12px; }
+  .atraso { border-color: #5a4515; }
+  .perfil-foto { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .foto-grande { width: 96px; height: 96px; border-radius: 50%; background: #2e231e center / cover no-repeat; border: 2px solid var(--acc);
+                 display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 42px; color: var(--acc); }
+  .galeria { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .galeria .item { position: relative; aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: #2e231e; }
+  .galeria img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .borrar { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(0,0,0,.7); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="Beauty Glam by Nathaly Torres" width="520" height="520">
+  <div class="titulo">Portal del profesional</div>
+</header>
+<main class="wrap" id="app"><p class="muted" style="text-align:center">Cargando…</p></main>
+
+<script>
+/* Misma API de la web de reservas (Apps Script → Implementar → Aplicación web). */
+const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const ls = {
+  get(k) { try { return JSON.parse(localStorage.getItem('bglam_' + k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem('bglam_' + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('bglam_' + k); } catch (e) {} }
+};
+
+let S = ls.get('sesionProfesionalSalon');   // { token, nombre, id, hasta }
+let AG = null;                            // agenda
+let sel = null;                           // fecha elegida
+let vista = 'agenda';
+let reloj = null;
+
+async function api(params) {
+  for (let i = 0; i < 4; i++) {
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(params) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!j.ok) { const e = new Error(j.error || 'Error'); e.final = true; throw e; }
+      return j;
+    } catch (e) {
+      if (e.final) { if (/sesión expiró/.test(e.message)) salir(e.message); throw e; }
+      await new Promise(res => setTimeout(res, 800 * (i + 1)));
+    }
+  }
+  throw new Error('No pudimos conectar. Revisa tu internet.');
+}
+
+const h12 = h => { const [a, b] = String(h).split(':').map(Number); return (a % 12 || 12) + ':' + String(b).padStart(2, '0') + (a < 12 ? ' am' : ' pm'); };
+const deISO = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const corta = f => { const d = deISO(f); return DIAS[d.getDay()] + ' ' + d.getDate() + ' ' + MESES[d.getMonth()]; };
+
+/* ---------- Ingreso ---------- */
+async function vistaLogin(msg) {
+  $('#app').innerHTML = '<p class="muted" style="text-align:center">Cargando…</p>';
+  let profesionales = ls.get('profesionalsSalon') || [];
+  try {
+    const r = await fetch(API + '?a=datos').then(x => x.json());
+    if (r.ok) { profesionales = r.profesionales; ls.set('profesionalsSalon', profesionales); }
+  } catch (e) { /* usa la lista guardada */ }
+  const ult = ls.get('ultimoProfesionalSalon');
+  $('#app').innerHTML = `
+    <h2>Entrar</h2>
+    <label for="barb">Profesional</label>
+    <select id="barb">${profesionales.map(b => `<option value="${esc(b.id)}" ${b.id === ult ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select>
+    <label for="pin">PIN</label>
+    <input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="••••">
+    <div class="err" id="err">${esc(msg || '')}</div>
+    <button class="btn" id="entrar">Entrar</button>
+    <p class="muted">El PIN te lo da la administración. No lo compartas.</p>`;
+  const entrar = async () => {
+    const b = $('#entrar'); b.disabled = true; $('#err').textContent = '';
+    try {
+      const r = await api({ a: 'bLogin', profesional: $('#barb').value, pin: $('#pin').value });
+      S = { token: r.token, nombre: r.nombre, id: r.id, hasta: Date.now() + 5.5 * 3600 * 1000 };
+      ls.set('sesionProfesionalSalon', S); ls.set('ultimoProfesionalSalon', r.id);
+      cargarAgenda();
+    } catch (e) { b.disabled = false; $('#err').textContent = e.message; }
+  };
+  $('#entrar').onclick = entrar;
+  $('#pin').onkeydown = e => { if (e.key === 'Enter') entrar(); };
+}
+
+function salir(msg) { ls.del('sesionProfesionalSalon'); S = null; AG = null; sel = null; clearInterval(reloj); vistaLogin(msg); }
+
+function topHtml(v) {
+  return `<div class="top"><div>Hola <b>${esc(S.nombre.split(' ')[0])}</b></div><button class="link" id="salir">Salir</button></div>
+    <div class="tabs"><button class="${v === 'agenda' ? 'on' : ''}" data-v="agenda">Mi agenda</button><button class="${v === 'fotos' ? 'on' : ''}" data-v="fotos">Mis fotos</button></div>`;
+}
+function enlacesTop() {
+  $('#salir').onclick = () => salir();
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => (b.dataset.v === 'fotos' ? vistaFotos() : cargarAgenda()));
+}
+
+/* ---------- Mi agenda ---------- */
+async function cargarAgenda(msg, silencioso) {
+  vista = 'agenda';
+  if (!silencioso) { $('#app').innerHTML = topHtml('agenda') + '<p class="muted" style="text-align:center;margin-top:20px">Cargando tu agenda…</p>'; enlacesTop(); }
+  try {
+    AG = await api({ a: 'bAgenda', token: S.token });
+    if (!sel || !AG.dias.some(d => d.fecha === sel)) sel = AG.hoy;
+    if (vista === 'agenda') pintarAgenda(msg);
+  } catch (e) {
+    if (S && !silencioso) { $('#app').innerHTML = topHtml('agenda') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; enlacesTop(); $('#re').onclick = () => cargarAgenda(); }
+  }
+  clearInterval(reloj);
+  reloj = setInterval(() => { if (S && vista === 'agenda' && !document.hidden) cargarAgenda('', true); }, 90000);
+}
+
+function accionesCita(c) {
+  if ((c.estado === 'Pendiente' || c.estado === 'Confirmada') && c.fecha <= AG.hoy)
+    return `<button class="btn fin" data-fin="${esc(c.id)}">Finalizado ✓</button>`;
+  if (c.estado === 'Finalizada')
+    return `<div class="muted" style="margin-top:6px">Enviada a facturación. <button class="link" data-des="${esc(c.id)}">Deshacer</button></div>`;
+  if (c.estado === 'Atendida') return '<div class="muted" style="margin-top:6px">Pagada en caja.</div>';
+  if (c.estado === 'Pendiente') return '<div class="muted" style="margin-top:6px">La administración aún no la confirma.</div>';
+  return '';
+}
+
+function filaCita(c, conFecha) {
+  const etiqueta = c.estado === 'Finalizada' ? 'En facturación' : c.estado === 'Atendida' ? 'Pagada' : c.estado;
+  return `<div class="cita">
+    <div class="cita-top"><b>${conFecha ? esc(corta(c.fecha)) + ' · ' : ''}${esc(h12(c.hora))}</b><span class="tag ${esc(c.estado.split(' ')[0])}">${esc(etiqueta)}</span></div>
+    <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)} · hasta ${esc(h12(c.fin))}</span></div>
+    ${accionesCita(c)}
+  </div>`;
+}
+
+function pintarAgenda(msg) {
+  const d = AG.dias.find(x => x.fecha === sel) || AG.dias[0];
+  const hoyD = AG.dias[0];
+  const activas = hoyD.citas.filter(c => c.estado !== 'No asistió');
+  const hechas = hoyD.citas.filter(c => c.estado === 'Finalizada' || c.estado === 'Atendida').length;
+  const faltan = hoyD.citas.filter(c => c.estado === 'Pendiente' || c.estado === 'Confirmada').length;
+  $('#app').innerHTML = topHtml('agenda') + `
+    ${msg ? `<div class="okmsg">${esc(msg)}</div>` : ''}
+    <div class="resumen"><div><b>${activas.length}</b><span>citas hoy</span></div><div><b>${hechas}</b><span>finalizadas</span></div><div><b>${faltan}</b><span>por atender</span></div></div>
+    ${AG.atrasadas.length ? `<div class="card atraso"><b>Sin finalizar de días anteriores</b><div class="muted">Si ya las atendiste, tócalas como finalizadas para que pasen a caja.</div>${AG.atrasadas.map(c => filaCita(c, true)).join('')}</div>` : ''}
+    <div class="dias">${AG.dias.map((x, i) => `<div class="dia ${x.fecha === d.fecha ? 'on' : ''}" data-f="${x.fecha}">
+      <small>${i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : DIAS[deISO(x.fecha).getDay()]}</small><b>${deISO(x.fecha).getDate()}</b><i>${x.citas.length ? x.citas.length + (x.citas.length === 1 ? ' cita' : ' citas') : (x.bloques.length ? 'sin citas' : 'libre')}</i></div>`).join('')}</div>
+    <h2>${esc(d.txt)}</h2>
+    <div class="muted">${d.bloques.length ? 'Tu turno: ' + d.bloques.map(r => esc(h12(r[0]) + ' – ' + h12(r[1]))).join(', ') : 'No tienes turno asignado este día.'} · lo asigna la administración</div>
+    <div class="card">${d.citas.length ? d.citas.map(c => filaCita(c, false)).join('') : '<p class="muted" style="margin:0">Sin citas este día.</p>'}</div>
+    <div id="msg" class="err"></div>
+    <button class="btn sec" id="actualizar">Actualizar</button>
+    <p class="muted">Cuando termines un servicio toca <b>Finalizado</b>: pasa a caja, donde cobran el servicio, los productos y tu propina.</p>`;
+  enlacesTop();
+  document.querySelectorAll('[data-f]').forEach(x => x.onclick = () => { sel = x.dataset.f; pintarAgenda(); });
+  $('#actualizar').onclick = () => cargarAgenda();
+  const todas = AG.dias.reduce((l, x) => l.concat(x.citas), []).concat(AG.atrasadas);
+  document.querySelectorAll('[data-fin]').forEach(b => b.onclick = async () => {
+    const c = todas.find(x => x.id === b.dataset.fin);
+    if (!confirm('¿Terminaste el servicio de ' + c.cliente + ' (' + c.servicio + ')?')) return;
+    b.disabled = true; b.textContent = 'Enviando…';
+    try { const r = await api({ a: 'bFinalizar', token: S.token, cita: c.id }); cargarAgenda(r.texto, true); }
+    catch (e) { b.disabled = false; b.textContent = 'Finalizado ✓'; $('#msg').textContent = e.message; }
+  });
+  document.querySelectorAll('[data-des]').forEach(b => b.onclick = async () => {
+    const c = todas.find(x => x.id === b.dataset.des);
+    if (!confirm('¿Deshacer el finalizado de ' + c.cliente + '?')) return;
+    b.disabled = true;
+    try { const r = await api({ a: 'bDeshacer', token: S.token, cita: c.id }); cargarAgenda(r.texto, true); }
+    catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
+  });
+}
+
+/* ---------- Mis fotos ---------- */
+let PF = null, GALP = [];
+
+function procesarImagen(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const lado = Math.min(img.width, img.height), t = 240;
+      const c = document.createElement('canvas'); c.width = t; c.height = t;
+      const g = c.getContext('2d');
+      g.fillStyle = '#000'; g.fillRect(0, 0, t, t);
+      g.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, t, t);
+      URL.revokeObjectURL(url);
+      let q = 0.85, d = c.toDataURL('image/jpeg', q);
+      while (d.length > 40000 && q > 0.45) { q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+      if (d.length > 44000) { const c2 = document.createElement('canvas'); c2.width = 160; c2.height = 160; c2.getContext('2d').drawImage(c, 0, 0, 160, 160); d = c2.toDataURL('image/jpeg', 0.7); }
+      res(d);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No pudimos leer esa imagen. Prueba con una foto JPG o PNG.')); };
+    img.src = url;
+  });
+}
+
+function procesarTrabajo(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const max = 720, k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      let q = 0.8, d = c.toDataURL('image/jpeg', q);
+      while (d.length > 170000 && q > 0.4) { q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+      if (d.length > 175000) return rej(new Error('Esa foto es muy pesada. Prueba con otra.'));
+      res(d);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No pudimos leer esa imagen. Prueba con una foto JPG o PNG.')); };
+    img.src = url;
+  });
+}
+
+function pintarFoto() {
+  const el = $('#pf-img');
+  if (PF.foto) { el.style.backgroundImage = "url('" + PF.foto + "')"; el.textContent = ''; }
+  else { el.style.backgroundImage = ''; el.textContent = S.nombre.trim().charAt(0).toUpperCase(); }
+  $('#pf-quitar').classList.toggle('hidden', !PF.foto);
+}
+
+function pintarGaleria() {
+  const g = $('#gal');
+  if (!g) return;
+  g.innerHTML = GALP.map(f => `<div class="item"><img src="${f.src}" alt="Trabajo"><button class="borrar" data-borrar="${esc(f.id)}" aria-label="Borrar foto">×</button></div>`).join('');
+  $('#gal-vacia').classList.toggle('hidden', GALP.length > 0);
+  $('#gal-cuenta').textContent = '(' + GALP.length + ' de 6)';
+  $('#gal-add').classList.toggle('hidden', GALP.length >= 6);
+  g.querySelectorAll('[data-borrar]').forEach(b => b.onclick = async () => {
+    if (!confirm('¿Borrar esta foto?')) return;
+    b.disabled = true;
+    try { await api({ a: 'bBorrarFoto', token: S.token, id: b.dataset.borrar }); GALP = GALP.filter(f => f.id !== b.dataset.borrar); pintarGaleria(); }
+    catch (e) { b.disabled = false; $('#gal-msg').className = 'err'; $('#gal-msg').textContent = e.message; }
+  });
+}
+
+async function vistaFotos() {
+  vista = 'fotos';
+  $('#app').innerHTML = topHtml('fotos') + '<p class="muted" style="text-align:center;margin-top:20px">Cargando tus fotos…</p>';
+  enlacesTop();
+  try { [PF, GALP] = await Promise.all([api({ a: 'bPerfil', token: S.token }), api({ a: 'bGaleria', token: S.token }).then(r => r.fotos)]); }
+  catch (e) { if (S) { $('#app').innerHTML = topHtml('fotos') + `<div class="err">${esc(e.message)}</div>`; enlacesTop(); } return; }
+  $('#app').innerHTML = topHtml('fotos') + `
+    <p class="muted">Así te ven los clientes cuando reservan en la web.</p>
+    <div class="card">
+      <b>Foto de perfil</b>
+      <div class="perfil-foto">
+        <div class="foto-grande" id="pf-img" role="img" aria-label="Tu foto"></div>
+        <label class="btn mini sec" for="pf-file">Cambiar foto</label>
+        <input type="file" id="pf-file" accept="image/*" class="hidden">
+        <button class="btn mini sec" id="pf-quitar">Quitar</button>
+      </div>
+      <div id="pf-msg" class="muted">Se muestra en círculo. Usa una imagen cuadrada y clara.</div>
+    </div>
+    <div class="card">
+      <b>Fotos de mis trabajos</b> <span class="muted" id="gal-cuenta"></span>
+      <div class="galeria" id="gal"></div>
+      <p class="muted hidden" id="gal-vacia">Todavía no has subido fotos.</p>
+      <label class="btn mini sec" for="gal-file" id="gal-add" style="margin-top:10px">+ Agregar fotos</label>
+      <input type="file" id="gal-file" accept="image/*" multiple class="hidden">
+      <div id="gal-msg" class="muted"></div>
+      <p class="muted">Se muestran en un carrusel cuando el cliente te elige. Hasta 6 fotos.</p>
+    </div>`;
+  enlacesTop();
+  pintarFoto(); pintarGaleria();
+  const guardarFoto = async (foto) => {
+    $('#pf-msg').className = 'muted'; $('#pf-msg').textContent = 'Guardando…';
+    try { const r = await api({ a: 'bGuardarFoto', token: S.token, foto: foto }); PF.foto = foto; pintarFoto(); $('#pf-msg').className = 'okmsg'; $('#pf-msg').textContent = r.texto; }
+    catch (err) { $('#pf-msg').className = 'err'; $('#pf-msg').textContent = err.message; }
+  };
+  $('#pf-file').onchange = async e => {
+    const file = e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    try { await guardarFoto(await procesarImagen(file)); }
+    catch (err) { $('#pf-msg').className = 'err'; $('#pf-msg').textContent = err.message; }
+  };
+  $('#pf-quitar').onclick = () => { if (confirm('¿Quitar tu foto de perfil?')) guardarFoto(''); };
+  $('#gal-file').onchange = async e => {
+    const files = Array.from(e.target.files).slice(0, Math.max(0, 6 - GALP.length));
+    e.target.value = '';
+    for (let i = 0; i < files.length; i++) {
+      $('#gal-msg').className = 'muted'; $('#gal-msg').textContent = 'Subiendo foto ' + (i + 1) + ' de ' + files.length + '…';
+      try { const d = await procesarTrabajo(files[i]); const r = await api({ a: 'bSubirFoto', token: S.token, datos: d }); GALP.push({ id: r.id, src: d }); pintarGaleria(); }
+      catch (err) { $('#gal-msg').className = 'err'; $('#gal-msg').textContent = err.message; return; }
+    }
+    $('#gal-msg').className = 'okmsg';
+    $('#gal-msg').textContent = files.length ? 'Listo. Ya se ven en la web.' : 'Ya tienes 6 fotos. Borra una para subir otra.';
+  };
+}
+
+if (S && S.token && S.hasta > Date.now()) cargarAgenda(); else vistaLogin();
+</script>
+</body>
+</html>
