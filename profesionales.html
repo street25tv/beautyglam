@@ -192,6 +192,7 @@ function filaCita(c, conFecha) {
   return `<div class="cita">
     <div class="cita-top"><b>${conFecha ? esc(corta(c.fecha)) + ' · ' : ''}${esc(h12(c.hora))}</b><span class="tag ${esc(c.estado.split(' ')[0])}">${esc(etiqueta)}</span></div>
     <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)} · hasta ${esc(h12(c.fin))}</span></div>
+    ${c.nota ? `<div class="muted" style="margin-top:4px">📝 ${esc(c.nota)}</div>` : ''}
     ${accionesCita(c)}
   </div>`;
 }

@@ -63,8 +63,9 @@
   .horas .chip { min-width: 0; padding: 10px 4px; font-weight: 600; }
 
   label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 5px; }
-  input { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 14px; outline: none; }
-  input:focus { border-color: var(--acc); }
+  input, textarea { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 14px; outline: none; font: inherit; color: inherit; }
+  input:focus, textarea:focus { border-color: var(--acc); }
+  textarea { resize: vertical; min-height: 76px; }
   .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 16px; cursor: pointer;
          background: var(--acc); color: var(--acc-txt); margin-top: 16px; text-align: center; text-decoration: none; }
   .btn:disabled { opacity: .5; cursor: default; }
@@ -153,7 +154,7 @@ const guardar = (k, v) => { try { localStorage.setItem('bglam_' + k, JSON.string
 const leerLS = k => { try { return JSON.parse(localStorage.getItem('bglam_' + k)); } catch (e) { return null; } };
 
 let D = null;               // datos del negocio
-const R = { servicios: [], cat: null, profesional: null, fecha: null, hora: null, horaCon: '' };
+const R = { servicios: [], cat: null, profesional: null, fecha: null, hora: null, horaCon: '', notas: '' };
 
 /* Llamadas a la API con reintentos (tras publicar, Google responde error unos minutos). */
 async function api(params, post) {
@@ -300,6 +301,8 @@ function vistaReservar() {
       <div class="lista-elegidos">${E.l.map(s => `<span class="tag">${esc(s.nombre)} <button data-quitar="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">×</button></span>`).join('')}</div>
       <div class="suma"><span>${E.l.length} ${E.l.length === 1 ? 'servicio' : 'servicios'} · ${dur(E.dur)}</span><b>${precioTxt(E.precio, E.variable)}</b></div>
       ${E.abono ? `<div class="muted">Para confirmar esta cita se pide un abono de <b>${pesos(E.abono)}</b>, que se descuenta del total.</div>` : ''}
+      <label for="notas">Notas para tu cita (opcional)</label>
+      <textarea id="notas" maxlength="300" rows="3" placeholder="Ej.: tengo el cabello largo, quiero un tono más claro, soy alérgica a…">${esc(R.notas || '')}</textarea>
     </div>`;
   }
 
@@ -348,6 +351,7 @@ function vistaReservar() {
         <div><span>Cuándo</span><b>${esc(fechaLarga(R.fecha))}, ${hora12(R.hora)} · ${dur(E.dur)}</b></div>
         <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
         ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
+        ${(R.notas || '').trim() ? `<div><span>Tus notas</span><b>${esc(R.notas.trim())}</b></div>` : ''}
       </div>
       <label for="nombre">Nombre</label><input id="nombre" autocomplete="name" value="${esc(yo.nombre || '')}" placeholder="Tu nombre">
       <label for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="numeric" autocomplete="tel" value="${esc(yo.tel || '')}" placeholder="300 123 4567">
@@ -367,6 +371,7 @@ function vistaReservar() {
     R.hora = null; vistaReservar();
   });
   v.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { R.servicios = R.servicios.filter(id => id !== b.dataset.quitar); R.hora = null; vistaReservar(); });
+  if ($('#notas')) $('#notas').oninput = e => { R.notas = e.target.value; };
   if ($('#cambiar')) $('#cambiar').onclick = () => { R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   v.querySelectorAll('[data-b]').forEach(el => {
     const elegir = () => {
@@ -417,7 +422,7 @@ async function confirmar() {
   if (tel.length < 10) return ($('#err').textContent = 'Escribe tu número de WhatsApp (10 dígitos).');
   const btn = $('#confirmar'); btn.disabled = true; btn.textContent = 'Reservando…'; $('#err').textContent = '';
   try {
-    const r = await api({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), profesional: R.profesional, fecha: R.fecha, hora: R.hora }, true);
+    const r = await api({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), profesional: R.profesional, fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim() }, true);
     guardar('cliente', { nombre, tel });
     guardar('ultimaCita', { cita: r.cita, t: r.tel });
     const enlace = location.origin + location.pathname + '?cita=' + r.cita + '&t=' + r.tel;
@@ -447,7 +452,8 @@ async function confirmar() {
       <div class="card" style="word-break:break-all;font-size:13px">${esc(enlace)}</div>
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
-    $('#otra').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+    R.notas = '';
+    $('#otra').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Confirmar reserva';
