@@ -44,6 +44,9 @@
   .chk-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
   .chk-grid label { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 11px; border: 1.5px solid var(--line); border-radius: 999px; color: var(--txt); font-size: 14px; cursor: pointer; }
   .chk-grid label:has(input:checked) { border-color: var(--acc); background: #33251f; }
+  .grupo-serv { margin-top: 12px; }
+  .grupo-serv .cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .grupo-serv .cab b { font-size: 14px; }
   .chk-grid input { margin: 0; accent-color: var(--acc); }
   .dos-btn { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
   .dos-btn .btn { margin: 0; }
@@ -169,7 +172,7 @@ function salir(msg) { ls.del('sesionAdmin'); S = null; vistaLogin(msg); }
 /* ---------- Lista ---------- */
 async function cargar(msg) {
   $('#app').innerHTML = '<p class="muted" style="text-align:center">Cargando profesionales…</p>';
-  try { const r = await api({ a: 'aProfesionals', token: S.token }); L = r.profesionales; L.categorias = r.categorias || []; vistaLista(msg); }
+  try { const r = await api({ a: 'aProfesionals', token: S.token }); L = r.profesionales; L.categorias = r.categorias || []; L.catalogo = r.catalogo || []; vistaLista(msg); }
   catch (e) { if (S) $('#app').innerHTML = `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; if ($('#re')) $('#re').onclick = () => cargar(); }
 }
 
@@ -184,7 +187,7 @@ function vistaLista(msg) {
     ${L.map(b => `
       <div class="card">
         <div class="barb"><div><b>${esc(b.nombre)}</b><span class="tag ${b.activo ? 'si' : 'no'}">${b.activo ? 'Activo' : 'Inactivo'}</span>
-          <div class="muted">${esc((b.especialidades || []).join(' · ') || 'Todas las especialidades')}</div>
+          <div class="muted">${(b.servicios || []).length} ${(b.servicios || []).length === 1 ? 'servicio' : 'servicios'} · ${esc((b.especialidades || []).join(' · ') || 'todas las categorías')}</div>
           <div class="muted">${esc(b.id)} · ${b.tipo === 'Arriendo' ? 'Arriendo $' + Number(b.arriendo || 0).toLocaleString('es-CO') : 'Comisión ' + (b.pct === '' ? '-' : b.pct) + '%'}${b.whatsapp ? ' · ' + esc(b.whatsapp) : ''}</div></div></div>
         <div class="muted" style="margin-top:6px">PIN: <span class="pin" data-pin="${esc(b.id)}">••••</span></div>
         <div class="acciones">
@@ -838,13 +841,13 @@ let SV = null;
 async function cargarServicios(msg) {
   $('#app').innerHTML = nav('servicios') + '<p class="muted" style="text-align:center;margin-top:24px">Cargando servicios…</p>';
   bindNav();
-  try { const r = await api({ a: 'aServicios', token: S.token }); SV = r.servicios; SV.categorias = r.categorias; vistaServicios(msg); }
+  try { const r = await api({ a: 'aServicios', token: S.token }); SV = r.servicios; SV.categorias = r.categorias; SV.profesionales = r.profesionales || []; vistaServicios(msg); }
   catch (e) { if (S) { $('#app').innerHTML = nav('servicios') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarServicios(); } }
 }
 
 function vistaServicios(msg) {
   $('#app').innerHTML = nav('servicios') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') + `
-    <p class="muted">Lo que ven las clientas al reservar, por categoría. La duración bloquea la agenda; la categoría define qué profesionales lo hacen (sus especialidades).</p>
+    <p class="muted">Lo que ven las clientas al reservar, por categoría. La duración bloquea la agenda. En cada servicio marcas qué profesionales lo hacen; la web solo las muestra a ellas.</p>
     <button class="btn" id="nuevo-s">+ Nuevo servicio</button>
     ${[...new Set(SV.map(s => s.cat))].map(ct => `<h2>${esc(ct)}</h2>` + SV.filter(s => s.cat === ct).map(s => `<div class="card"><div class="barb"><div><b>${esc(s.nombre)}</b>${s.activo ? '' : '<span class="tag no">Oculto</span>'}
       <div class="muted">${s.variable ? 'desde ' : ''}${pesosC(s.precio)} · ${durTxt(s.dur)}${s.abono ? ' · abono ' + pesosC(s.abono) : ''}${s.desc ? ' · ' + esc(s.desc) : ''}</div></div>
@@ -875,6 +878,11 @@ function vistaServicioForm(s) {
       <label for="s-desc">Descripción (opcional)</label><input id="s-desc" maxlength="140" value="${esc(s.desc)}" placeholder="Incluye retiro del esmalte anterior">
       <label class="switch"><input type="checkbox" id="s-activo" ${s.activo ? 'checked' : ''}> Activo (aparece en la web)</label>
     </div>
+    <div class="card">
+      <b>Profesionales que lo hacen</b>
+      <p class="muted" style="margin:4px 0 0">Solo ellas aparecen en la web cuando la clienta elige este servicio.</p>
+      <div class="chk-grid" id="s-profs">${(SV.profesionales || []).map(b => `<label><input type="checkbox" value="${esc(b.id)}" ${!nuevo && (b.servicios || []).indexOf(s.id) >= 0 ? 'checked' : ''}> ${esc(b.nombre)}${b.activo ? '' : ' (inactiva)'}</label>`).join('') || '<span class="muted">Todavía no hay profesionales.</span>'}</div>
+    </div>
     <div id="msg" class="err"></div>
     <button class="btn" id="guardar">${nuevo ? 'Crear servicio' : 'Guardar cambios'}</button>
     ${nuevo ? '' : '<button class="btn peligro" id="borrar">Borrar servicio</button>'}`;
@@ -886,7 +894,8 @@ function vistaServicioForm(s) {
     const cat = $('#s-cat').value === '__otra' ? $('#s-cat-otra').value : $('#s-cat').value;
     try {
       const r = await api({ a: 'aGuardarServicio', token: S.token, id: nuevo ? '' : s.id, nombre: $('#s-nombre').value, cat: cat, precio: $('#s-precio').value,
-        variable: $('#s-var').checked, abono: $('#s-abono').value, dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked });
+        variable: $('#s-var').checked, abono: $('#s-abono').value, dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked,
+        profesionales: [...document.querySelectorAll('#s-profs input:checked')].map(i => i.value) });
       cargarServicios(r.texto);
     } catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
   };
@@ -1007,9 +1016,12 @@ function vistaForm(b) {
       <label class="switch"><input type="checkbox" id="f-activo" ${b.activo ? 'checked' : ''}> Activo (aparece en la web y puede entrar al portal)</label>
     </div>
     <div class="card">
-      <b>Especialidades</b>
-      <p class="muted" style="margin:4px 0 0">Solo recibe citas de los servicios de estas categorías. Sin ninguna marcada = hace todos.</p>
-      <div class="chk-grid" id="f-esp">${[...new Set((L.categorias || []).concat(b.especialidades || []))].map(ct => `<label><input type="checkbox" value="${esc(ct)}" ${(b.especialidades || []).indexOf(ct) >= 0 ? 'checked' : ''}> ${esc(ct)}</label>`).join('')}</div>
+      <b>Servicios que hace</b>
+      <p class="muted" style="margin:4px 0 0">Solo recibe citas de estos servicios y solo aparece en la web para ellos. Ella también puede cambiarlos desde su portal.</p>
+      <div id="f-serv">${[...new Set((L.catalogo || []).map(x => x.cat))].map(ct => `<div class="grupo-serv">
+        <div class="cab"><b>${esc(ct)}</b><button type="button" class="link" data-todos="${esc(ct)}">Marcar todos</button></div>
+        <div class="chk-grid">${L.catalogo.filter(x => x.cat === ct).map(x => `<label><input type="checkbox" data-cat="${esc(ct)}" value="${esc(x.id)}" ${(b.servicios || []).indexOf(x.id) >= 0 ? 'checked' : ''}> ${esc(x.nombre)}</label>`).join('')}</div>
+      </div>`).join('') || '<p class="muted">Primero crea los servicios en la pestaña Servicios.</p>'}</div>
     </div>
     <div class="card">
       <b>Horario base</b>
@@ -1021,6 +1033,11 @@ function vistaForm(b) {
     <button class="btn" id="guardar">${nuevo ? 'Crear profesional' : 'Guardar cambios'}</button>`;
   const tipo = () => { const a = $('#f-tipo').value === 'Arriendo'; $('#c-pct').classList.toggle('hidden', a); $('#c-arr').classList.toggle('hidden', !a); };
   $('#f-tipo').onchange = tipo; tipo();
+  document.querySelectorAll('[data-todos]').forEach(x => x.onclick = () => {
+    const cajas = [...document.querySelectorAll('#f-serv input')].filter(i => i.dataset.cat === x.dataset.todos);
+    const marcar = cajas.some(i => !i.checked);
+    cajas.forEach(i => { i.checked = marcar; });
+  });
   $('#volver').onclick = () => vistaLista();
   $('#salir').onclick = () => salir();
   document.querySelectorAll('.dia .libre input').forEach(c => c.onchange = () => {
@@ -1044,11 +1061,12 @@ function vistaForm(b) {
       const t = f.querySelectorAll('input[type=time]');
       horario[f.dataset.dia] = f.querySelector('.libre input').checked ? 'Libre' : t[0].value + '-' + t[1].value;
     });
+    if ((L.catalogo || []).length && !document.querySelector('#f-serv input:checked')) { $('#msg').textContent = 'Marca al menos un servicio que haga.'; return; }
     const btn = $('#guardar'); btn.disabled = true; btn.textContent = 'Guardando…'; $('#msg').textContent = '';
     try {
       const r = await api({ a: 'aGuardarProfesional', token: S.token, id: nuevo ? '' : b.id, nombre: $('#f-nombre').value, whatsapp: $('#f-tel').value,
         tipo: $('#f-tipo').value, pct: $('#f-pct').value, arriendo: $('#f-arr').value, activo: $('#f-activo').checked, horario,
-        especialidades: [...document.querySelectorAll('#f-esp input:checked')].map(i => i.value) });
+        servicios: (L.catalogo || []).length ? [...document.querySelectorAll('#f-serv input:checked')].map(i => i.value) : undefined });
       if (r.nuevo) vistaCreado(r); else cargar(r.texto);
     } catch (e) { btn.disabled = false; btn.textContent = nuevo ? 'Crear profesional' : 'Guardar cambios'; $('#msg').textContent = e.message; }
   };
