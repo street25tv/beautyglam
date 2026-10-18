@@ -929,11 +929,29 @@ async function cargarFinanzas(msg) {
   catch (e) { if (S) { $('#app').innerHTML = nav('finanzas') + `<div class="err">${esc(e.message)}</div><button class="btn sec" id="re">Reintentar</button>`; bindNav(); $('#re').onclick = () => cargarFinanzas(); } }
 }
 
-function vistaFinanzas(msg) {
+/** Pie de la tarjeta de cada profesional en Finanzas: botón "Profesional liquidado" o el pago ya hecho. */
+function liqHtml(b) {
+  if (b.liquidada) return `<div class="okmsg">✓ Liquidado el ${esc(b.liquidada.fecha)}${b.liquidada.medio ? ' · ' + esc(b.liquidada.medio) : ''} · ${pesosF(b.liquidada.pagado)}</div>
+    ${b.liquidada.wa ? `<a class="btn mini sec" style="margin-top:8px" target="_blank" rel="noopener" href="${esc(b.liquidada.wa)}">Reenviar confirmación por WhatsApp</a>` : ''}`;
+  if (b.cruce) return `<p class="muted" style="margin:8px 0 0">${esc(b.cruce)}</p>`;
+  if (!(b.pagar > 0)) return '';
+  const medios = (FD.medios && FD.medios.length ? FD.medios : ['Efectivo']);
+  return `<button class="btn" data-liq="${esc(b.id)}">Profesional liquidado</button>
+    <div class="hidden" id="liq-${esc(b.id)}">
+      <label for="liq-medio-${esc(b.id)}">¿Cómo se le pagó?</label>
+      <select id="liq-medio-${esc(b.id)}">${medios.map(m => `<option>${esc(m)}</option>`).join('')}</select>
+      <p class="muted" style="margin:8px 0 0">Se registra el pago de ${pesosF(b.pagar)} del ${esc(FD.periodoTxt)} y se prepara el WhatsApp de confirmación${b.whatsapp ? '' : ' (no tiene WhatsApp registrado)'}.</p>
+      <div class="acciones"><button class="btn mini" data-liqok="${esc(b.id)}">Confirmar pago</button><button class="btn mini sec" data-liqno="${esc(b.id)}">Cancelar</button></div>
+      <div class="err" id="liq-err-${esc(b.id)}"></div>
+    </div>`;
+}
+
+function vistaFinanzas(msg, wa) {
   const d = FD, t = d.totales;
   const chips = [['hoy', 'Hoy'], ['semana', 'Esta semana'], ['mes', 'Este mes'], ['mesant', 'Mes pasado'], ['otro', 'Otro']];
   const maxDia = Math.max(1, ...d.porDia.map(x => x.valor));
-  $('#app').innerHTML = nav('finanzas') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') + `
+  $('#app').innerHTML = nav('finanzas') + (msg ? `<div class="okmsg">${esc(msg)}</div>` : '') +
+    (wa ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(wa)}">Enviar confirmación por WhatsApp</a>` : '') + `
     <div class="chips">${chips.map(c => `<button class="chip ${F.rango === c[0] ? 'on' : ''}" data-rango="${c[0]}">${c[1]}</button>`).join('')}</div>
     <div class="fila ${F.rango === 'otro' ? '' : 'hidden'}" id="otro" style="margin-top:8px">
       <div><label for="f-desde">Desde</label><input type="date" id="f-desde" value="${esc(d.desde)}"></div>
@@ -962,7 +980,8 @@ function vistaFinanzas(msg) {
         <div><span>Propinas</span><b>${pesosF(b.propinas)}</b></div>
         <div><span>${b.pagar < 0 ? 'Debe al salón' : 'Se le paga'}</span><b>${pesosF(Math.abs(b.pagar))}</b></div>
         <div class="fuerte"><span>Para el salón${b.tipo === 'Arriendo' ? ' (arriendo)' : ''}</span><b>${pesosF(b.barberia)}</b></div>
-      </div></div>`).join('') : '<p class="muted">Sin profesionales en este periodo.</p>'}
+      </div>
+      ${liqHtml(b)}</div>`).join('') : '<p class="muted">Sin profesionales en este periodo.</p>'}
     ${F.profesional === '*' ? '<button class="btn sec" id="liq">Guardar liquidación de este periodo en la hoja</button>' : ''}
     <div class="card"><b>Medios de pago</b>${d.medios.length ? d.medios.map(m => `<div class="lineas"><div><span>${esc(m.medio)}</span><b>${pesosF(m.valor)}</b></div></div>`).join('') : '<p class="muted">Sin cobros.</p>'}</div>
     ${d.serviciosTop.length ? `<div class="card"><b>Servicios más vendidos</b>${d.serviciosTop.map(s => `<div class="lineas"><div><span>${esc(s.nombre)} · ${s.cantidad}</span><b>${pesosF(s.valor)}</b></div></div>`).join('')}</div>` : ''}
@@ -974,6 +993,17 @@ function vistaFinanzas(msg) {
   const otro = () => { if ($('#f-desde').value && $('#f-hasta').value) { F.desde = $('#f-desde').value; F.hasta = $('#f-hasta').value; cargarFinanzas(); } };
   $('#f-desde').onchange = otro; $('#f-hasta').onchange = otro;
   $('#f-barbf').onchange = e => { F.profesional = e.target.value; cargarFinanzas(); };
+  document.querySelectorAll('[data-liq]').forEach(x => x.onclick = () => { x.classList.add('hidden'); $('#liq-' + x.dataset.liq).classList.remove('hidden'); });
+  document.querySelectorAll('[data-liqno]').forEach(x => x.onclick = () => { $('#liq-' + x.dataset.liqno).classList.add('hidden'); document.querySelector(`[data-liq="${x.dataset.liqno}"]`).classList.remove('hidden'); });
+  document.querySelectorAll('[data-liqok]').forEach(x => x.onclick = async () => {
+    const id = x.dataset.liqok; x.disabled = true; x.textContent = 'Guardando…'; $('#liq-err-' + id).textContent = '';
+    try {
+      const r = await api({ a: 'aLiquidarProfesional', token: S.token, desde: d.desde, hasta: d.hasta, profesional: id, medio: $('#liq-medio-' + id).value });
+      FD = await api({ a: 'aFinanzas', token: S.token, desde: d.desde, hasta: d.hasta, profesional: F.profesional });
+      vistaFinanzas(r.texto, r.wa);
+      window.scrollTo(0, 0);
+    } catch (e) { x.disabled = false; x.textContent = 'Confirmar pago'; $('#liq-err-' + id).textContent = e.message; }
+  });
   if ($('#liq')) $('#liq').onclick = async () => {
     if (!confirm('¿Guardar la liquidación del ' + d.periodoTxt + ' en la pestaña Liquidaciones?')) return;
     const b = $('#liq'); b.disabled = true;
