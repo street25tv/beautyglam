@@ -155,11 +155,11 @@ function salir(msg) { ls.del('sesionProfesionalSalon'); S = null; AG = null; sel
 
 function topHtml(v) {
   return `<div class="top"><div>Hola <b>${esc(S.nombre.split(' ')[0])}</b></div><button class="link" id="salir">Salir</button></div>
-    <div class="tabs"><button class="${v === 'agenda' ? 'on' : ''}" data-v="agenda">Mi agenda</button><button class="${v === 'servicios' ? 'on' : ''}" data-v="servicios">Mis servicios</button><button class="${v === 'fotos' ? 'on' : ''}" data-v="fotos">Mis fotos</button></div>`;
+    <div class="tabs"><button class="${v === 'agenda' ? 'on' : ''}" data-v="agenda">Mi agenda</button><button class="${v === 'servicios' ? 'on' : ''}" data-v="servicios">Mis servicios</button></div>`;
 }
 function enlacesTop() {
   $('#salir').onclick = () => salir();
-  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => (b.dataset.v === 'fotos' ? vistaFotos() : b.dataset.v === 'servicios' ? vistaServicios() : cargarAgenda()));
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => (b.dataset.v === 'servicios' ? vistaServicios() : cargarAgenda()));
 }
 
 /* ---------- Mi agenda ---------- */
