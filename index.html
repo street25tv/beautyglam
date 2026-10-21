@@ -97,6 +97,8 @@
   .puntos { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
   .puntos span { width: 7px; height: 7px; border-radius: 50%; background: #444; }
   .puntos span.on { background: var(--acc); }
+  .acc-serv { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+  .opt.elegido { cursor: default; }
   .link { background: none; border: 0; color: var(--acc); cursor: pointer; padding: 10px 0 0; font-weight: 600; font-size: 14px; }
   .hidden { display: none !important; }
   .cats { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 4px; margin-bottom: 10px; }
@@ -331,11 +333,17 @@ function vistaReservar() {
   const barb = D.profesionales.find(b => b.id === R.profesional);
 
   // 1 · Servicios por categoría
-  let html = '<h2>1 · ¿Qué te vas a hacer? <small>puedes elegir varios</small></h2>';
+  // Con un servicio elegido la lista se cierra: solo queda lo elegido y las profesionales que lo hacen.
+  const abierta = !E.l.length || R.agregando;
+  let html = '<h2 id="paso1">1 · ¿Qué te vas a hacer?</h2>';
   const cats = (D.categorias && D.categorias.length ? D.categorias : ['Servicios']);
+  if (abierta) {
+  if (R.agregando) html += '<p class="muted">Elige el servicio que quieres sumar a la misma cita. <button class="link" id="no-agregar">Cancelar</button></p>';
   if (!R.cat || cats.indexOf(R.cat) < 0) R.cat = cats[0];
   html += '<div class="cats" role="tablist">' + cats.map(c => `<button class="cat ${c === R.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}${R.servicios.some(id => (D.servicios.find(s => s.id === id) || {}).cat === c) ? ' •' : ''}</button>`).join('') + '</div>';
-  const enCat = D.servicios.filter(s => (D.categorias && D.categorias.length ? s.cat === R.cat : true));
+  const enCat = D.servicios.filter(s => (D.categorias && D.categorias.length ? s.cat === R.cat : true))
+    // Al agregar otro servicio, solo los que alguna profesional puede hacer junto con lo ya elegido.
+    .filter(s => !R.agregando || R.servicios.indexOf(s.id) >= 0 || D.profesionales.some(b => R.servicios.concat(s.id).every(id => (b.servicios || []).indexOf(id) >= 0)));
   if (D.categorias && D.categorias.length) html += `<div class="portada">${imgFoto('cat:' + R.cat, R.cat, R.cat)}<span>${esc(R.cat)}</span></div>`;
   html += '<div class="grid">' + enCat.map(s => {
     const on = R.servicios.indexOf(s.id) >= 0;
@@ -345,9 +353,17 @@ function vistaReservar() {
         ${s.abono ? `<span class="badge">Abono ${pesos(s.abono)} para reservar</span>` : ''}</span>
       <span class="meta">${precioTxt(s.precio, s.variable)}<br>${dur(s.dur)}</span></button>`;
   }).join('') + '</div>';
-  if (E.l.length) {
+  }
+  if (E.l.length && !R.agregando) {
+    html += '<div class="grid">' + E.l.map(s => `<div class="opt on elegido">
+      <span class="mini">${imgFoto(s.id, s.cat, s.nombre, true)}<span class="check" aria-hidden="true">✓</span></span>
+      <span class="opt-txt"><b>${esc(s.nombre)}</b>${s.desc ? `<span class="desc">${esc(s.desc)}</span>` : ''}</span>
+      <span class="meta">${precioTxt(s.precio, s.variable)}<br>${dur(s.dur)}</span></div>`).join('') + '</div>';
+    html += `<div class="acc-serv"><button class="link" id="cambiar-serv">← Cambiar servicio</button>${E.l.length < 6 ? '<button class="link" id="agregar-serv">+ Agregar otro servicio</button>' : ''}</div>`;
+  }
+  if (E.l.length && !R.agregando) {
     html += `<div class="card total">
-      <div class="lista-elegidos">${E.l.map(s => `<span class="tag">${esc(s.nombre)} <button data-quitar="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">×</button></span>`).join('')}</div>
+      ${E.l.length < 2 ? '' : `<div class="lista-elegidos">${E.l.map(s => `<span class="tag">${esc(s.nombre)} <button data-quitar="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">×</button></span>`).join('')}</div>`}
       <div class="suma"><span>${E.l.length} ${E.l.length === 1 ? 'servicio' : 'servicios'} · ${dur(E.dur)}</span><b>${precioTxt(E.precio, E.variable)}</b></div>
       ${E.abono ? `<div class="muted">Para confirmar esta cita se pide un abono de <b>${pesos(E.abono)}</b>, que se descuenta del total.</div>` : ''}
       <label for="notas">Notas para tu cita (opcional)</label>
@@ -356,7 +372,7 @@ function vistaReservar() {
   }
 
   // 2 · Profesional
-  if (E.l.length) {
+  if (E.l.length && !R.agregando) {
     html += '<h2 id="paso2">2 · ¿Con quién?</h2>';
     if (!aptas.length) {
       html += '<p class="card muted">Ninguna profesional hace todos estos servicios en la misma cita. Quita alguno y resérvalo aparte.</p>';
@@ -377,7 +393,7 @@ function vistaReservar() {
     }
   }
 
-  const listo = E.l.length && R.profesional && aptas.length;
+  const listo = E.l.length && !R.agregando && R.profesional && aptas.length;
   if (listo) {
     html += '<h2>3 · Día</h2><div class="chips">';
     const hoy = deISO(D.hoy);
@@ -414,12 +430,17 @@ function vistaReservar() {
   v.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { R.cat = b.dataset.cat; vistaReservar(); });
   v.querySelectorAll('[data-s]').forEach(b => b.onclick = () => {
     const id = b.dataset.s, i = R.servicios.indexOf(id);
-    if (i >= 0) R.servicios.splice(i, 1);
+    if (!R.agregando) R.servicios = [id];
+    else if (i >= 0) R.servicios.splice(i, 1);
     else if (R.servicios.length >= 6) { alert('Máximo 6 servicios por cita.'); return; }
     else R.servicios.push(id);
-    R.hora = null; vistaReservar();
+    R.agregando = false; R.hora = null; vistaReservar();
+    setTimeout(() => { const p = $('#paso1'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   });
-  v.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { R.servicios = R.servicios.filter(id => id !== b.dataset.quitar); R.hora = null; vistaReservar(); });
+  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+  if ($('#agregar-serv')) $('#agregar-serv').onclick = () => { R.agregando = true; R.hora = null; vistaReservar(); };
+  if ($('#no-agregar')) $('#no-agregar').onclick = () => { R.agregando = false; vistaReservar(); };
+  v.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { R.servicios = R.servicios.filter(id => id !== b.dataset.quitar); R.agregando = false; R.hora = null; vistaReservar(); });
   if ($('#notas')) $('#notas').oninput = e => { R.notas = e.target.value; };
   if ($('#cambiar')) $('#cambiar').onclick = () => { R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   v.querySelectorAll('[data-b]').forEach(el => {
