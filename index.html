@@ -230,7 +230,7 @@ async function cargarFotos() {
 
 /* ---------- Fotos de servicios y portadas (las sube la administración) ---------- */
 let FSV = leerLS('fotosServ') || {}; // { S01: { v, src }, 'cat:Uñas': { v, src } }
-const SLUGS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion' };
+const SLUGS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion', pestanas: 'cejas', pedi: 'facial' };
 function ilustracion(cat) {
   const k = String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z]/)[0];
   return 'img/cat-' + (SLUGS[k] || 'otros') + '.svg';

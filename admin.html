@@ -982,7 +982,7 @@ function vistaServicioForm(s) {
 
 /* ---------- Fotos de servicios y portadas ---------- */
 const AFS = {}; // { clave: 'data:image/…' } ya descargadas en esta sesión
-const ILUS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion' };
+const ILUS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion', pestanas: 'cejas', pedi: 'facial' };
 const ilustracion = cat => 'img/cat-' + (ILUS[String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z]/)[0]] || 'otros') + '.svg';
 const srcAdm = (k, cat) => AFS[k] || (cat && AFS['cat:' + cat]) || ilustracion(cat);
 function refrescarAdm() { document.querySelectorAll('img[data-afk]').forEach(el => { const s = srcAdm(el.dataset.afk, el.dataset.cat); if (el.getAttribute('src') !== s) el.src = s; }); }
