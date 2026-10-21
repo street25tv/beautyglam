@@ -113,7 +113,9 @@
   .svp .pctw { display: flex; align-items: center; gap: 4px; color: var(--sub); font-size: 13px; }
   .svp .pctw input { width: 64px; padding: 7px 8px; text-align: right; }
   .svp.off .pctw { opacity: .35; }
-  .sin-pct .pctw { display: none; }
+  .svp .durw input { width: 66px; }
+  @media (max-width: 420px) { .svp { flex-wrap: wrap; } .svp label { flex-basis: 100%; } .svp .pctw:first-of-type { margin-left: auto; } }
+  .sin-pct .pctw:not(.durw) { display: none; }
   .perfil-foto { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
   .foto-grande { width: 96px; height: 96px; border-radius: 50%; background: var(--card2) center / cover no-repeat; border: 2px solid var(--acc);
                  display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 42px; color: var(--acc); }
@@ -1250,12 +1252,13 @@ function vistaForm(b) {
     </div>
     <div class="card">
       <b>Servicios que hace</b>
-      <p class="muted" style="margin:4px 0 0">Solo recibe citas de estos servicios y solo aparece en la web para ellos. <span class="si-pct">Al lado de cada servicio va el % de comisión que gana por él (empieza con el % general).</span></p>
+      <p class="muted" style="margin:4px 0 0">Solo recibe citas de estos servicios y solo aparece en la web para ellos. <span class="si-pct">Al lado de cada servicio va el % de comisión que gana por él (empieza con el % general).</span> Los minutos son lo que ella tarda en ese servicio (empieza con la duración de la pestaña Servicios).</p>
       <div id="f-serv">${[...new Set((L.catalogo || []).map(x => x.cat))].map(ct => `<div class="grupo-serv">
         <div class="cab"><b>${esc(ct)}</b><button type="button" class="link" data-todos="${esc(ct)}">Marcar todos</button></div>
-        ${L.catalogo.filter(x => x.cat === ct).map(x => { const on = (b.servicios || []).indexOf(x.id) >= 0, propio = (b.comisiones || {})[x.id];
+        ${L.catalogo.filter(x => x.cat === ct).map(x => { const on = (b.servicios || []).indexOf(x.id) >= 0, propio = (b.comisiones || {})[x.id], minProp = (b.duraciones || {})[x.id];
           return `<div class="svp ${on ? '' : 'off'}"><label><input type="checkbox" data-cat="${esc(ct)}" value="${esc(x.id)}" ${on ? 'checked' : ''}> ${esc(x.nombre)}</label>
-          <span class="pctw"><input type="number" min="0" max="100" step="1" inputmode="decimal" data-pct="${esc(x.id)}" ${propio != null ? 'data-propio="1"' : ''} value="${esc(propio != null ? propio : b.pct)}" aria-label="% de ${esc(x.nombre)}">%</span></div>`; }).join('')}
+          <span class="pctw"><input type="number" min="0" max="100" step="1" inputmode="decimal" data-pct="${esc(x.id)}" ${propio != null ? 'data-propio="1"' : ''} value="${esc(propio != null ? propio : b.pct)}" aria-label="% de ${esc(x.nombre)}">%</span>
+          <span class="pctw durw"><input type="number" min="5" max="720" step="5" inputmode="numeric" data-dur="${esc(x.id)}" value="${esc(minProp || x.dur || 30)}" aria-label="Minutos de ${esc(x.nombre)}">min</span></div>`; }).join('')}
       </div>`).join('') || '<p class="muted">Primero crea los servicios en la pestaña Servicios.</p>'}</div>
     </div>
     <div class="card">
@@ -1307,7 +1310,8 @@ function vistaForm(b) {
       const r = await api({ a: 'aGuardarProfesional', token: S.token, id: nuevo ? '' : b.id, nombre: $('#f-nombre').value, whatsapp: $('#f-tel').value,
         tipo: $('#f-tipo').value, pct: $('#f-pct').value, arriendo: $('#f-arr').value, activo: $('#f-activo').checked, horario,
         servicios: (L.catalogo || []).length ? [...document.querySelectorAll('#f-serv input[type=checkbox]:checked')].map(i => i.value) : undefined,
-        comisiones: Object.fromEntries([...document.querySelectorAll('#f-serv input[type=checkbox]:checked')].map(c => [c.value, document.querySelector(`#f-serv [data-pct="${c.value}"]`).value])) });
+        comisiones: Object.fromEntries([...document.querySelectorAll('#f-serv input[type=checkbox]:checked')].map(c => [c.value, document.querySelector(`#f-serv [data-pct="${c.value}"]`).value])),
+        duraciones: Object.fromEntries([...document.querySelectorAll('#f-serv input[type=checkbox]:checked')].map(c => [c.value, document.querySelector(`#f-serv [data-dur="${c.value}"]`).value])) });
       if (r.nuevo) vistaCreado(r); else cargar(r.texto);
     } catch (e) { btn.disabled = false; btn.textContent = nuevo ? 'Crear profesional' : 'Guardar cambios'; $('#msg').textContent = e.message; }
   };

@@ -311,7 +311,10 @@ const precioTxt = (v, variable) => (variable ? 'desde ' : '') + pesos(v);
 /** Suma de los servicios elegidos. */
 function elegidos() {
   const l = R.servicios.map(id => D.servicios.find(s => s.id === id)).filter(Boolean);
-  return { l, precio: l.reduce((t, s) => t + s.precio, 0), dur: l.reduce((t, s) => t + s.dur, 0),
+  // Cada profesional puede tardar distinto: se usa su duración cuando ya se sabe quién atiende.
+  const pr = D.profesionales.find(b => R.profesional && R.profesional !== '*' ? b.id === R.profesional : (R.horaCon && b.nombre === R.horaCon));
+  const md = (pr && pr.duraciones) || {};
+  return { l, precio: l.reduce((t, s) => t + s.precio, 0), dur: l.reduce((t, s) => t + (md[s.id] || s.dur), 0),
     abono: l.reduce((t, s) => t + (s.abono || 0), 0), variable: l.some(s => s.variable) };
 }
 
