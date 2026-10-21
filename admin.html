@@ -1263,7 +1263,7 @@ function vistaForm(b) {
     </div>
     <div class="card">
       <b>Horario base</b>
-      <p class="muted" style="margin:4px 0 0">Se copia a sus turnos con "Copiar su horario base" (Agenda → Turnos).</p>
+      <p class="muted" style="margin:4px 0 0">Es su horario fijo: con él recibe reservas todas las semanas. Para cambiar un día puntual o darle el día libre, edítalo en Agenda → Turnos.</p>
       ${DIAS.map(d => filaDia(d, b.horario[d])).join('')}
       <div class="acciones"><button class="btn mini sec" id="copiar">Copiar lunes a todos</button></div>
     </div>
