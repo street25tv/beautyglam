@@ -37,6 +37,14 @@
   .top { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
   .link { background: none; border: 0; color: var(--sub); text-decoration: underline; cursor: pointer; padding: 6px; }
   .tabs { display: flex; gap: 6px; margin-top: 10px; }
+  .chipsg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .chipg { border: 1px solid var(--line); background: transparent; color: var(--sub); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .chipg.on { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); font-weight: 600; }
+  .filag { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--line); }
+  .filag:last-child { border-bottom: 0; }
+  .filag span { color: var(--sub); display: flex; flex-direction: column; }
+  .filag small { font-size: 12px; }
+  .filag.total span, .filag.total b { color: var(--txt); font-size: 17px; font-weight: 700; }
   .tabs button { flex: 1; border: 0; background: var(--card); padding: 11px 4px; border-radius: 10px; color: var(--sub); font-weight: 600; cursor: pointer; }
   .tabs button.on { background: var(--acc); color: var(--acc-txt); }
   .dias { display: flex; gap: 6px; overflow-x: auto; margin-top: 14px; padding-bottom: 4px; scrollbar-width: none; }
@@ -56,7 +64,7 @@
   .tag.No { background: #2a1414; color: var(--err); }
   .resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
   .resumen div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
-  .resumen b { display: block; font-size: 22px; } .resumen span { color: var(--sub); font-size: 12px; }
+  .resumen b { display: block; font-size: 22px; } .resumen.g b { font-size: 16px; } .resumen span { color: var(--sub); font-size: 12px; }
   .atraso { border-color: #5a4515; }
   .perfil-foto { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
   .foto-grande { width: 96px; height: 96px; border-radius: 50%; background: #2e231e center / cover no-repeat; border: 2px solid var(--acc);
@@ -144,7 +152,7 @@ async function vistaLogin(msg) {
       const r = await api({ a: 'bLogin', profesional: $('#barb').value, pin: $('#pin').value });
       S = { token: r.token, nombre: r.nombre, id: r.id, hasta: Date.now() + 5.5 * 3600 * 1000 };
       ls.set('sesionProfesionalSalon', S); ls.set('ultimoProfesionalSalon', r.id);
-      cargarAgenda();
+      vistaGanancias();
     } catch (e) { b.disabled = false; $('#err').textContent = e.message; }
   };
   $('#entrar').onclick = entrar;
@@ -155,11 +163,11 @@ function salir(msg) { ls.del('sesionProfesionalSalon'); S = null; AG = null; sel
 
 function topHtml(v) {
   return `<div class="top"><div>Hola <b>${esc(S.nombre.split(' ')[0])}</b></div><button class="link" id="salir">Salir</button></div>
-    <div class="tabs"><button class="${v === 'agenda' ? 'on' : ''}" data-v="agenda">Mi agenda</button><button class="${v === 'servicios' ? 'on' : ''}" data-v="servicios">Mis servicios</button></div>`;
+    <div class="tabs"><button class="${v === 'ganancias' ? 'on' : ''}" data-v="ganancias">Mis ganancias</button><button class="${v === 'servicios' ? 'on' : ''}" data-v="servicios">Mis servicios</button></div>`;
 }
 function enlacesTop() {
   $('#salir').onclick = () => salir();
-  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => (b.dataset.v === 'servicios' ? vistaServicios() : cargarAgenda()));
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => (b.dataset.v === 'servicios' ? vistaServicios() : vistaGanancias()));
 }
 
 /* ---------- Mi agenda ---------- */
@@ -233,6 +241,57 @@ function pintarAgenda(msg) {
     try { const r = await api({ a: 'bDeshacer', token: S.token, cita: c.id }); cargarAgenda(r.texto, true); }
     catch (e) { b.disabled = false; $('#msg').textContent = e.message; }
   });
+}
+
+/* ---------- Mis ganancias (la agenda la maneja la administración) ---------- */
+const pesos = v => (v < 0 ? '-$' : '$') + Math.abs(Math.round(v || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+let GR = 'quincena';
+function rangoG(r) {
+  const h = new Date(), iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const hoy = iso(h), y = h.getFullYear(), m = h.getMonth(), dd = h.getDate();
+  if (r === 'quincena') return [hoy.slice(0, 8) + (dd <= 15 ? '01' : '16'), hoy];
+  if (r === 'quincant') {
+    if (dd > 15) return [hoy.slice(0, 8) + '01', hoy.slice(0, 8) + '15'];
+    const fin = new Date(y, m, 0); return [iso(new Date(y, m - 1, 16)), iso(fin)];
+  }
+  if (r === 'mes') return [hoy.slice(0, 8) + '01', hoy];
+  return [iso(new Date(y, m - 1, 1)), iso(new Date(y, m, 0))];
+}
+async function vistaGanancias() {
+  vista = 'ganancias';
+  clearInterval(reloj);
+  const chips = [['quincena', 'Esta quincena'], ['quincant', 'Quincena pasada'], ['mes', 'Este mes'], ['mesant', 'Mes pasado']];
+  const cab = topHtml('ganancias') + `<div class="chipsg">${chips.map(c => `<button class="chipg ${GR === c[0] ? 'on' : ''}" data-r="${c[0]}">${c[1]}</button>`).join('')}</div>`;
+  const enlazar = () => { enlacesTop(); document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { GR = b.dataset.r; vistaGanancias(); }); };
+  $('#app').innerHTML = cab + '<p class="muted" style="text-align:center;margin-top:20px">Cargando…</p>'; enlazar();
+  try {
+    const [desde, hasta] = rangoG(GR);
+    const g = await api({ a: 'bFinanzas', token: S.token, desde, hasta });
+    if (vista !== 'ganancias') return;
+    const arr = g.tipo === 'Arriendo';
+    $('#app').innerHTML = cab + `
+      <h2>${esc(g.periodoTxt)}</h2>
+      <div class="resumen g"><div><b>${g.servicios}</b><span>servicios</span></div><div><b>${pesos(g.ganado)}</b><span>${arr ? 'tus servicios − arriendo' : 'comisión'}</span></div><div><b>${pesos(g.propinas)}</b><span>propinas</span></div></div>
+      <div class="card">
+        <div class="filag"><span>Valor de tus servicios</span><b>${pesos(g.cobrado)}</b></div>
+        ${arr ? `<div class="filag"><span>Arriendo del periodo</span><b>-${pesos(g.arriendo)}</b></div>` : `<div class="filag"><span>Tu comisión</span><b>${pesos(g.comision)}</b></div>`}
+        <div class="filag"><span>Propinas</span><b>${pesos(g.propinas)}</b></div>
+        <div class="filag total"><span>${g.liquidada ? 'Te pagaron' : 'Por pagarte'}</span><b>${pesos(g.liquidada ? g.liquidada.pagado : g.pagar)}</b></div>
+        ${g.liquidada ? `<div class="okmsg">Pagado el ${esc(g.liquidada.fecha)} · ${esc(g.liquidada.medio || '')}</div>` : '<p class="muted" style="margin:6px 0 0">La administración te paga por quincena.</p>'}
+      </div>
+      <h2>Servicios del periodo</h2>
+      <div class="card">${g.detalle.length ? g.detalle.map(x => `<div class="cita">
+        <div class="cita-top"><b>${esc(corta(x.fecha))} · ${esc(h12(x.hora))}</b><span>${pesos(x.valor)}</span></div>
+        <div>${esc(x.cliente)} <span class="muted">· ${esc(x.servicio)}</span></div>
+        <div class="muted">${arr ? '' : 'Comisión ' + pesos(x.comision)}${x.propina ? (arr ? '' : ' · ') + 'Propina ' + pesos(x.propina) : ''}</div>
+      </div>`).join('') : '<p class="muted" style="margin:0">Aún no hay servicios cobrados en este periodo.</p>'}</div>
+      <h2>Pagos recibidos</h2>
+      <div class="card">${g.pagos.length ? g.pagos.map(x => `<div class="filag"><span>${esc(x.periodo)}<small>${esc(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}</small></span><b>${pesos(x.valor)}</b></div>`).join('') : '<p class="muted" style="margin:0">Todavía no hay pagos registrados.</p>'}</div>
+      <p class="muted">Tu agenda y tus citas las maneja la administración. Si tienes dudas sobre un pago, escríbele.</p>`;
+    enlazar();
+  } catch (e) {
+    if (S) { $('#app').innerHTML = cab + `<div class="err">${esc(e.message)}</div>`; enlazar(); }
+  }
 }
 
 /* ---------- Mis fotos ---------- */
@@ -388,7 +447,7 @@ async function vistaServicios(msg) {
   };
 }
 
-if (S && S.token && S.hasta > Date.now()) cargarAgenda(); else vistaLogin();
+if (S && S.token && S.hasta > Date.now()) vistaGanancias(); else vistaLogin();
 </script>
 </body>
 </html>

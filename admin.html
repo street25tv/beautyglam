@@ -317,7 +317,7 @@ function botonesCita(c) {
     `<button class="btn mini peligro" data-acc="Cancelada" data-cita="${esc(c.id)}">Rechazar</button>`);
   if ((c.estado === 'Pendiente' || c.estado === 'Confirmada' || c.estado === 'Finalizada') && AG && c.fecha <= AG.hoy) b.push(`<button class="btn mini" data-cobrar="${esc(c.id)}">Facturar</button>`);
   if (c.estado === 'Finalizada') b.push(`<button class="btn mini sec" data-acc="Confirmada" data-cita="${esc(c.id)}">Quitar finalizado</button>`);
-  if (c.estado === 'Pendiente' || c.estado === 'Confirmada') b.push(`<button class="btn mini sec" data-mover="${esc(c.id)}">Mover</button>`);
+  if (c.estado === 'Pendiente' || c.estado === 'Confirmada') b.push(`<button class="btn mini sec" data-mover="${esc(c.id)}">Reagendar / cambiar profesional</button>`);
   if (c.estado === 'Confirmada') b.push(`<button class="btn mini sec" data-acc="No asistió" data-cita="${esc(c.id)}">No asistió</button>`,
     `<button class="btn mini peligro" data-acc="Cancelada" data-cita="${esc(c.id)}">Cancelar</button>`);
   if (c.estado === 'Cancelada' || c.estado === 'No asistió') b.push(`<button class="btn mini sec" data-acc="Confirmada" data-cita="${esc(c.id)}">Reactivar</button>`);
@@ -472,11 +472,12 @@ function vistaCitaForm(c) {
   const fecha0 = mover ? (c.fecha < g.hoy ? g.hoy : c.fecha) : (g.fecha < g.hoy ? g.hoy : g.fecha);
   $('#app').innerHTML = `
     <div class="top"><button class="link" id="volver">← Volver a la agenda</button><button class="link" id="salir">Salir</button></div>
-    <h2>${mover ? 'Mover cita ' + esc(c.id) : 'Nueva cita'}</h2>
+    <h2>${mover ? 'Reagendar cita ' + esc(c.id) : 'Nueva cita'}</h2>
     <div class="card">
       ${mover ? `<b>${esc(c.cliente)}</b><div class="muted">${esc(c.servicio)} · hoy está: ${esc(fechaCorta(c.fecha))}, ${esc(c.hora12)} con ${esc(c.profesional)}</div>
-      <label for="c-barb">Profesional</label>
-      <select id="c-barb">${activos.map(b => `<option value="${esc(b.id)}" ${c.profesionalId === b.id ? 'selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select>` : `
+      <label for="c-barb">Profesional (puedes pasarla a otra)</label>
+      <select id="c-barb">${(() => { const ap = aptasPara(String(c.servicioId).split(',').map(x => x.trim()).filter(String)); const l = ap.length ? ap : activos;
+        return (l.length > 1 ? '<option value="*">Cualquiera disponible</option>' : '') + l.map(b => `<option value="${esc(b.id)}" ${c.profesionalId === b.id ? 'selected' : ''}>${esc(b.nombre)}${c.profesionalId === b.id ? ' (actual)' : ''}</option>`).join(''); })()}</select>` : `
       <label for="c-nombre">Cliente</label><input id="c-nombre" maxlength="60" placeholder="Nombre y apellido">
       <label for="c-tel">WhatsApp</label><input id="c-tel" type="tel" inputmode="numeric" placeholder="300 123 4567">
       <label>Servicios</label><div id="c-serv" class="servsel">${servSelHtml('c-serv', g.servicios, [])}</div><div class="suma-sel" id="c-suma"></div>
@@ -487,7 +488,7 @@ function vistaCitaForm(c) {
       ${mover ? '' : '<label for="c-notas">Notas (opcional)</label><input id="c-notas" maxlength="200">'}
     </div>
     <div id="msg" class="err"></div>
-    <button class="btn" id="guardar">${mover ? 'Mover cita' : 'Guardar cita'}</button>`;
+    <button class="btn" id="guardar">${mover ? 'Guardar cambio' : 'Guardar cita'}</button>`;
   $('#volver').onclick = () => vistaAgenda();
   $('#salir').onclick = () => salir();
   const servicio = () => (mover ? c.servicioId : servSel('c-serv').join(','));
