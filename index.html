@@ -101,6 +101,10 @@
   .puntos { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
   .puntos span { width: 7px; height: 7px; border-radius: 50%; background: #444; }
   .puntos span.on { background: var(--acc); }
+  .asig { margin-top: 10px; }
+  .asig .pros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .pro { border: 1px solid var(--line); background: transparent; color: var(--txt); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+  .pro.on { border-color: var(--acc); background: var(--acc); color: #1b1310; font-weight: 600; }
   .acc-serv { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
   .opt.elegido { cursor: default; }
   .link { background: none; border: 0; color: var(--acc); cursor: pointer; padding: 10px 0 0; font-weight: 600; font-size: 14px; }
@@ -168,7 +172,7 @@ const guardar = (k, v) => { try { localStorage.setItem('bglam_' + k, JSON.string
 const leerLS = k => { try { return JSON.parse(localStorage.getItem('bglam_' + k)); } catch (e) { return null; } };
 
 let D = null;               // datos del negocio
-const R = { servicios: [], cat: null, profesional: null, fecha: null, hora: null, horaCon: '', notas: '' };
+const R = { servicios: [], cat: null, profesional: null, fecha: null, hora: null, horaCon: '', notas: '', asig: {}, plan: null };
 
 /* Llamadas a la API con reintentos (tras publicar, Google responde error unos minutos). */
 async function api(params, post) {
@@ -353,6 +357,15 @@ function filasServicios(E, nombrePro, hora) {
   return (l.length > 1 ? `<div class="cab-serv">${l.length} servicios, uno después del otro</div>` : '') +
     l.map(x => `<div class="item"><span>${esc(x.s.nombre)}<small>${quien}${rangoTxt(x.ini, x.fin)} (${dur(x.min)})</small></span><b>${precioTxt(x.s.precio, x.s.variable)}</b></div>`).join('');
 }
+/** Filas del resumen desde segmentos [{ servicio, profesional, hora, fin, precio, variable }]. */
+function filasSeg(segs) {
+  return (segs.length > 1 ? `<div class="cab-serv">${segs.length} servicios, uno después del otro</div>` : '') +
+    segs.map(x => `<div class="item"><span>${esc(x.servicio)}<small>${esc(x.profesional)} · ${rangoTxt(aMinW(x.hora), aMinW(x.fin))} (${dur(aMinW(x.fin) - aMinW(x.hora))})</small></span><b>${precioTxt(x.precio, x.variable)}</b></div>`).join('');
+}
+const cuandoSeg = (fechaTxt, segs) => fechaTxt + ', ' + rangoTxt(aMinW(segs[0].hora), aMinW(segs[segs.length - 1].fin));
+/** Plan del servidor ([{ s, p, nombre, servicio, hora, fin }]) → segmentos con precio. */
+const segDePlan = plan => plan.map(x => { const sv = D.servicios.find(y => y.id === x.s) || {}; return { servicio: x.servicio, profesional: x.nombre, hora: x.hora, fin: x.fin, precio: sv.precio || 0, variable: !!sv.variable }; });
+
 /** "jueves 22 de octubre, 1:00 p. m. – 5:00 p. m." */
 function cuandoTxt(fechaTxt, E, nombrePro, hora) {
   const l = turnosCita(E, nombrePro, hora);
@@ -366,7 +379,15 @@ function vistaReservar() {
   const v = $('#v-reservar');
   R.servicios = R.servicios.filter(id => D.servicios.some(s => s.id === id));
   const E = elegidos();
-  const aptas = R.servicios.length ? capaces() : [];
+  const multi = E.l.length > 1; // varios servicios: cada uno con su profesional, uno detrás de otro
+  const aptas = R.servicios.length && !multi ? capaces() : [];
+  if (multi) {
+    Object.keys(R.asig).forEach(id => { if (R.servicios.indexOf(id) < 0) delete R.asig[id]; });
+    R.servicios.forEach(id => {
+      const ok = D.profesionales.filter(b => (b.servicios || []).indexOf(id) >= 0);
+      if (!R.asig[id] || (R.asig[id] !== '*' && !ok.some(b => b.id === R.asig[id]))) R.asig[id] = ok.length === 1 ? ok[0].id : '*';
+    });
+  }
   if (R.profesional && R.profesional !== '*' && !aptas.some(b => b.id === R.profesional)) { R.profesional = null; R.fecha = null; R.hora = null; }
   if (R.profesional === '*' && aptas.length < 2) R.profesional = aptas.length === 1 ? aptas[0].id : null;
   const barb = D.profesionales.find(b => b.id === R.profesional);
@@ -382,7 +403,7 @@ function vistaReservar() {
   html += '<div class="cats" role="tablist">' + cats.map(c => `<button class="cat ${c === R.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}${R.servicios.some(id => (D.servicios.find(s => s.id === id) || {}).cat === c) ? ' •' : ''}</button>`).join('') + '</div>';
   const enCat = D.servicios.filter(s => (D.categorias && D.categorias.length ? s.cat === R.cat : true))
     // Al agregar otro servicio, solo los que alguna profesional puede hacer junto con lo ya elegido.
-    .filter(s => !R.agregando || R.servicios.indexOf(s.id) >= 0 || D.profesionales.some(b => R.servicios.concat(s.id).every(id => (b.servicios || []).indexOf(id) >= 0)));
+    .filter(s => !R.agregando || R.servicios.indexOf(s.id) >= 0 || D.profesionales.some(b => (b.servicios || []).indexOf(s.id) >= 0));
   if (D.categorias && D.categorias.length) html += `<div class="portada">${imgFoto('cat:' + R.cat, R.cat, R.cat)}<span>${esc(R.cat)}</span></div>`;
   html += '<div class="grid">' + enCat.map(s => {
     const on = R.servicios.indexOf(s.id) >= 0;
@@ -410,8 +431,20 @@ function vistaReservar() {
     </div>`;
   }
 
-  // 2 · Profesional
-  if (E.l.length && !R.agregando) {
+  // 2 · Profesional: con varios servicios, una por servicio
+  const multiOk = multi && E.l.every(s => D.profesionales.some(b => (b.servicios || []).indexOf(s.id) >= 0));
+  if (multi && !R.agregando) {
+    html += '<h2 id="paso2">2 · ¿Con quién? <small>elige para cada servicio</small></h2>';
+    html += E.l.map((s, i) => {
+      const ok = D.profesionales.filter(b => (b.servicios || []).indexOf(s.id) >= 0);
+      if (!ok.length) return `<div class="card asig"><b>${i + 1}. ${esc(s.nombre)}</b><p class="muted">Ninguna profesional hace este servicio. Quítalo para continuar.</p></div>`;
+      const ops = (ok.length > 1 ? [{ id: '*', nombre: 'La que esté libre' }] : []).concat(ok);
+      return `<div class="card asig"><b>${i + 1}. ${esc(s.nombre)}</b><div class="pros">${ops.map(b =>
+        `<button class="pro ${R.asig[s.id] === b.id ? 'on' : ''}" data-asig="${esc(s.id)}" data-pro="${esc(b.id)}" aria-pressed="${R.asig[s.id] === b.id}">${esc(b.nombre)}</button>`).join('')}</div></div>`;
+    }).join('');
+    html += '<p class="muted">Los servicios se hacen uno después del otro, en este orden. Puede ser la misma profesional o una distinta en cada uno.</p>';
+  }
+  if (!multi && E.l.length && !R.agregando) {
     html += '<h2 id="paso2">2 · ¿Con quién?</h2>';
     if (!aptas.length) {
       html += '<p class="card muted">Ninguna profesional hace todos estos servicios en la misma cita. Quita alguno y resérvalo aparte.</p>';
@@ -432,7 +465,7 @@ function vistaReservar() {
     }
   }
 
-  const listo = E.l.length && !R.agregando && R.profesional && aptas.length;
+  const listo = E.l.length && !R.agregando && (multi ? multiOk : R.profesional && aptas.length);
   if (listo) {
     html += '<h2>3 · Día</h2><div class="chips">';
     const hoy = deISO(D.hoy);
@@ -445,15 +478,18 @@ function vistaReservar() {
     html += '</div>';
   }
   if (listo && R.fecha) html += '<h2>4 · Hora</h2><div id="horas" class="cargando">Buscando horarios libres…</div>';
-  if (listo && R.fecha && R.hora) {
+  if (listo && R.fecha && R.hora && (!multi || R.plan)) {
     const yo = leerLS('cliente') || {};
     const quien = barb ? barb.nombre : (R.horaCon || 'La primera disponible');
+    const segs = multi ? segDePlan(R.plan) : null;
+    const quienes = segs ? segs.map(x => x.profesional).filter((v, i, a) => a.indexOf(v) === i).join(', ') : quien;
+    const durTot = segs ? aMinW(segs[segs.length - 1].fin) - aMinW(segs[0].hora) : E.dur;
     html += `<h2>5 · Tus datos</h2>
       <div class="card resumen">
-        ${filasServicios(E, quien, R.hora)}
-        <div><span>Con</span><b>${esc(quien)}</b></div>
-        <div><span>Cuándo</span><b>${esc(cuandoTxt(fechaLarga(R.fecha), E, quien, R.hora))}</b></div>
-        <div><span>Duración${E.l.length > 1 ? ' total' : ''}</span><b>${dur(E.dur)}</b></div>
+        ${segs ? filasSeg(segs) : filasServicios(E, quien, R.hora)}
+        <div><span>Con</span><b>${esc(quienes)}</b></div>
+        <div><span>Cuándo</span><b>${esc(segs ? cuandoSeg(fechaLarga(R.fecha), segs) : cuandoTxt(fechaLarga(R.fecha), E, quien, R.hora))}</b></div>
+        <div><span>Duración${E.l.length > 1 ? ' total' : ''}</span><b>${dur(durTot)}</b></div>
         <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
         ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
         ${(R.notas || '').trim() ? `<div><span>Tus notas</span><b>${esc(R.notas.trim())}</b></div>` : ''}
@@ -477,6 +513,7 @@ function vistaReservar() {
     R.agregando = false; R.hora = null; vistaReservar();
     setTimeout(() => { const p = $('#paso1'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   });
+  v.querySelectorAll('[data-asig]').forEach(b => b.onclick = () => { R.asig[b.dataset.asig] = b.dataset.pro; R.hora = null; R.plan = null; vistaReservar(); });
   if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   if ($('#agregar-serv')) $('#agregar-serv').onclick = () => { R.agregando = true; R.hora = null; vistaReservar(); };
   if ($('#no-agregar')) $('#no-agregar').onclick = () => { R.agregando = false; vistaReservar(); };
@@ -509,15 +546,19 @@ async function cargarHoras() {
   const n = ++pedidoHoras;
   const caja = $('#horas');
   try {
-    const r = await api({ a: 'libres', fecha: R.fecha, profesional: R.profesional, servicio: R.servicios.join(',') });
+    const multi = R.servicios.length > 1;
+    const r = await api(multi ? { a: 'libres', fecha: R.fecha, servicio: R.servicios.join(','), asig: JSON.stringify(R.asig) }
+      : { a: 'libres', fecha: R.fecha, profesional: R.profesional, servicio: R.servicios.join(',') });
     if (n !== pedidoHoras || !$('#horas')) return;
-    if (!r.libres.length) { caja.className = 'muted'; caja.textContent = 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'; return; }
+    if (!r.libres.length) { caja.className = 'muted'; caja.textContent = multi ? 'Ese día no alcanzan a encadenarse estos servicios con esas profesionales. Prueba otro día o elige "La que esté libre".' : 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'; return; }
+    if (multi && R.hora) { const s = r.libres.find(x => x.hora === R.hora); if (s) R.plan = s.plan; }
     caja.className = 'horas';
     caja.innerHTML = r.libres.map(s => `<button class="chip ${s.hora === R.hora ? 'on' : ''}" data-h="${s.hora}">${hora12(s.hora).replace(' ', '&nbsp;')}</button>`).join('');
     caja.querySelectorAll('[data-h]').forEach(b => b.onclick = () => {
       R.hora = b.dataset.h;
       const s = r.libres.find(x => x.hora === R.hora);
-      R.horaCon = R.profesional === '*' && s ? s.profesionales.map(id => (D.profesionales.find(p => p.id === id) || {}).nombre).filter(Boolean)[0] || '' : '';
+      R.horaCon = R.profesional === '*' && s && s.profesionales ? s.profesionales.map(id => (D.profesionales.find(p => p.id === id) || {}).nombre).filter(Boolean)[0] || '' : '';
+      R.plan = s && s.plan ? s.plan : null;
       vistaReservar();
       setTimeout(() => { const el = $('#nombre'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
     });
@@ -533,22 +574,26 @@ async function confirmar() {
   const btn = $('#confirmar'); btn.disabled = true; btn.textContent = 'Reservando…'; $('#err').textContent = '';
   try {
     const Eres = elegidos(), horaRes = R.hora;
-    const r = await api({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), profesional: R.profesional, fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim() }, true);
+    const multi = R.servicios.length > 1;
+    const r = await api(Object.assign({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim() },
+      multi ? { asig: R.asig } : { profesional: R.profesional }), true);
+    // Detalle por servicio: el que manda el servidor (visita) o el calculado aquí (una profesional).
+    const segs = r.segmentos || turnosCita(Eres, r.profesional, horaRes).map(x => ({ servicio: x.s.nombre, profesional: r.profesional, hora: deMin(x.ini), fin: deMin(x.fin), precio: x.s.precio, variable: x.s.variable }));
     guardar('cliente', { nombre, tel });
     guardar('ultimaCita', { cita: r.cita, t: r.tel });
     const enlace = location.origin + location.pathname + '?cita=' + r.cita + '&t=' + r.tel;
     const waDest = r.waProfesional || D.whatsapp;
-    const msg = 'Hola, reservé en ' + D.negocio + ': ' + (Eres.l.length > 1 ? turnosCita(Eres, r.profesional, horaRes).map(x => x.s.nombre + ' ' + rangoTxt(x.ini, x.fin) + ' (' + precioTxt(x.s.precio, x.s.variable) + ')').join(', ') : r.servicio) + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + ' con ' + r.profesional + '. Código ' + r.cita + '.' +
+    const msg = 'Hola, reservé en ' + D.negocio + ': ' + (segs.length > 1 ? segs.map(x => x.servicio + ' con ' + x.profesional + ' ' + rangoTxt(aMinW(x.hora), aMinW(x.fin)) + ' (' + precioTxt(x.precio, x.variable) + ')').join(', ') : r.servicio) + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + ' con ' + r.profesional + '. Código ' + r.cita + '.' +
       (r.abono ? ' Te envío el comprobante del abono de ' + pesos(r.abono) + '.' : '');
     $('#v-reservar').innerHTML = `
       <h2>¡Reserva recibida!</h2>
       <div class="card ok">
         <div class="muted">Tu código</div><div class="codigo">${esc(r.cita)}</div>
         <div class="resumen" style="margin-top:8px">
-          ${Eres.l.length ? filasServicios(Eres, r.profesional, horaRes) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`}
+          ${segs.length ? filasSeg(segs) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`}
           <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
-          <div><span>Cuándo</span><b>${esc(Eres.l.length ? cuandoTxt(r.fechaTxt, Eres, r.profesional, horaRes) : r.fechaTxt + ', ' + r.hora12)}</b></div>
+          <div><span>Cuándo</span><b>${esc(segs.length ? cuandoSeg(r.fechaTxt, segs) : r.fechaTxt + ', ' + r.hora12)}</b></div>
           <div><span>Duración${Eres.l.length > 1 ? ' total' : ''}</span><b>${dur(r.dur)}</b></div>
           <div><span>Total</span><b>${precioTxt(r.precio, r.variable)}</b></div>
         </div>
@@ -565,7 +610,7 @@ async function confirmar() {
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
     R.notas = '';
-    $('#otra').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
+    $('#otra').onclick = () => { R.servicios = []; R.asig = {}; R.plan = null; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Confirmar reserva';
@@ -601,11 +646,10 @@ async function consultar() {
         <div class="codigo" style="font-size:30px">${esc(r.estado)}</div>
         <div class="resumen">
           ${(() => { // detalle por servicio si se reconocen todos los nombres de la cita
-            const l = String(r.servicio).split(' + ').map(n => (D.servicios || []).find(x => x.nombre === n));
-            return l.length > 1 && l.every(Boolean) ? filasServicios({ l }, r.profesional, r.hora12) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`;
+            return r.segmentos && r.segmentos.length ? filasSeg(r.segmentos) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`;
           })()}
           <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
-          <div><span>Cuándo</span><b>${esc((() => { const l = String(r.servicio).split(' + ').map(n => (D.servicios || []).find(x => x.nombre === n)); return l.every(Boolean) ? cuandoTxt(r.fechaTxt, { l }, r.profesional, r.hora12) : r.fechaTxt + ', ' + r.hora12; })())}</b></div>
+          <div><span>Cuándo</span><b>${esc(r.segmentos && r.segmentos.length ? cuandoSeg(r.fechaTxt, r.segmentos) : r.fechaTxt + ', ' + r.hora12 + (r.fin ? ' – ' + hora12(r.fin) : ''))}</b></div>
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
           ${r.abono ? `<div><span>Abono</span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' recibido ✓' : pesos(r.abono) + ' pendiente'}</b></div>` : ''}
         </div>
