@@ -324,13 +324,39 @@ function elegidos() {
     abono: l.reduce((t, s) => t + (s.abono || 0), 0), variable: l.some(s => s.variable) };
 }
 
-/** Filas del resumen con cada servicio (nombre, duración con esa profesional y precio). */
-function filasServicios(E, nombrePro) {
+/** "13:00", "1:00 p. m." → minutos. */
+function aMinW(h) {
+  const m = String(h || '').match(/(\d{1,2}):(\d{2})\s*([ap])?/i);
+  if (!m) return null;
+  let a = Number(m[1]);
+  const x = (m[3] || '').toLowerCase();
+  if (x === 'p' && a < 12) a += 12;
+  if (x === 'a' && a === 12) a = 0;
+  return a * 60 + Number(m[2]);
+}
+const deMin = t => String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+
+/** Los servicios de la cita uno detrás de otro (sin solaparse), con la profesional que atiende:
+ *  [{ s, ini, fin, min }] en minutos. La duración es la de esa profesional. */
+function turnosCita(E, nombrePro, hora) {
   const pr = D.profesionales.find(b => b.nombre === nombrePro);
   const md = (pr && pr.duraciones) || {};
-  const varios = E.l.length > 1;
-  return (varios ? `<div class="cab-serv">${E.l.length} servicios</div>` : '') +
-    E.l.map(s => `<div class="item"><span>${esc(s.nombre)}<small>${dur(md[s.id] || s.dur)}</small></span><b>${precioTxt(s.precio, s.variable)}</b></div>`).join('');
+  let t = aMinW(hora) || 0;
+  return E.l.map(s => { const min = md[s.id] || s.dur, ini = t; t += min; return { s, ini, fin: t, min }; });
+}
+const rangoTxt = (a, b) => hora12(deMin(a)) + ' – ' + hora12(deMin(b));
+
+/** Filas del resumen: cada servicio con su profesional, su hora de inicio y fin, y su precio. */
+function filasServicios(E, nombrePro, hora) {
+  const l = turnosCita(E, nombrePro, hora);
+  const quien = nombrePro && nombrePro !== 'La primera disponible' ? esc(nombrePro) + ' · ' : '';
+  return (l.length > 1 ? `<div class="cab-serv">${l.length} servicios, uno después del otro</div>` : '') +
+    l.map(x => `<div class="item"><span>${esc(x.s.nombre)}<small>${quien}${rangoTxt(x.ini, x.fin)} (${dur(x.min)})</small></span><b>${precioTxt(x.s.precio, x.s.variable)}</b></div>`).join('');
+}
+/** "jueves 22 de octubre, 1:00 p. m. – 5:00 p. m." */
+function cuandoTxt(fechaTxt, E, nombrePro, hora) {
+  const l = turnosCita(E, nombrePro, hora);
+  return fechaTxt + ', ' + (l.length ? rangoTxt(l[0].ini, l[l.length - 1].fin) : hora12(deMin(aMinW(hora) || 0)));
 }
 
 /** Profesionales que hacen TODOS los servicios elegidos. */
@@ -424,9 +450,9 @@ function vistaReservar() {
     const quien = barb ? barb.nombre : (R.horaCon || 'La primera disponible');
     html += `<h2>5 · Tus datos</h2>
       <div class="card resumen">
-        ${filasServicios(E, quien)}
+        ${filasServicios(E, quien, R.hora)}
         <div><span>Con</span><b>${esc(quien)}</b></div>
-        <div><span>Cuándo</span><b>${esc(fechaLarga(R.fecha))}, ${hora12(R.hora)}</b></div>
+        <div><span>Cuándo</span><b>${esc(cuandoTxt(fechaLarga(R.fecha), E, quien, R.hora))}</b></div>
         <div><span>Duración${E.l.length > 1 ? ' total' : ''}</span><b>${dur(E.dur)}</b></div>
         <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
         ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
@@ -506,23 +532,23 @@ async function confirmar() {
   if (tel.length < 10) return ($('#err').textContent = 'Escribe tu número de WhatsApp (10 dígitos).');
   const btn = $('#confirmar'); btn.disabled = true; btn.textContent = 'Reservando…'; $('#err').textContent = '';
   try {
-    const Eres = elegidos();
+    const Eres = elegidos(), horaRes = R.hora;
     const r = await api({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), profesional: R.profesional, fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim() }, true);
     guardar('cliente', { nombre, tel });
     guardar('ultimaCita', { cita: r.cita, t: r.tel });
     const enlace = location.origin + location.pathname + '?cita=' + r.cita + '&t=' + r.tel;
     const waDest = r.waProfesional || D.whatsapp;
-    const msg = 'Hola, reservé en ' + D.negocio + ': ' + (Eres.l.length > 1 ? Eres.l.map(s => s.nombre + ' (' + precioTxt(s.precio, s.variable) + ')').join(', ') : r.servicio) + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + ' con ' + r.profesional + '. Código ' + r.cita + '.' +
+    const msg = 'Hola, reservé en ' + D.negocio + ': ' + (Eres.l.length > 1 ? turnosCita(Eres, r.profesional, horaRes).map(x => x.s.nombre + ' ' + rangoTxt(x.ini, x.fin) + ' (' + precioTxt(x.s.precio, x.s.variable) + ')').join(', ') : r.servicio) + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + ' con ' + r.profesional + '. Código ' + r.cita + '.' +
       (r.abono ? ' Te envío el comprobante del abono de ' + pesos(r.abono) + '.' : '');
     $('#v-reservar').innerHTML = `
       <h2>¡Reserva recibida!</h2>
       <div class="card ok">
         <div class="muted">Tu código</div><div class="codigo">${esc(r.cita)}</div>
         <div class="resumen" style="margin-top:8px">
-          ${Eres.l.length ? filasServicios(Eres, r.profesional) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`}
+          ${Eres.l.length ? filasServicios(Eres, r.profesional, horaRes) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`}
           <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
-          <div><span>Cuándo</span><b>${esc(r.fechaTxt)}, ${esc(r.hora12)}</b></div>
+          <div><span>Cuándo</span><b>${esc(Eres.l.length ? cuandoTxt(r.fechaTxt, Eres, r.profesional, horaRes) : r.fechaTxt + ', ' + r.hora12)}</b></div>
           <div><span>Duración${Eres.l.length > 1 ? ' total' : ''}</span><b>${dur(r.dur)}</b></div>
           <div><span>Total</span><b>${precioTxt(r.precio, r.variable)}</b></div>
         </div>
@@ -576,10 +602,10 @@ async function consultar() {
         <div class="resumen">
           ${(() => { // detalle por servicio si se reconocen todos los nombres de la cita
             const l = String(r.servicio).split(' + ').map(n => (D.servicios || []).find(x => x.nombre === n));
-            return l.length > 1 && l.every(Boolean) ? filasServicios({ l }, r.profesional) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`;
+            return l.length > 1 && l.every(Boolean) ? filasServicios({ l }, r.profesional, r.hora12) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`;
           })()}
           <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
-          <div><span>Cuándo</span><b>${esc(r.fechaTxt)}, ${esc(r.hora12)}</b></div>
+          <div><span>Cuándo</span><b>${esc((() => { const l = String(r.servicio).split(' + ').map(n => (D.servicios || []).find(x => x.nombre === n)); return l.every(Boolean) ? cuandoTxt(r.fechaTxt, { l }, r.profesional, r.hora12) : r.fechaTxt + ', ' + r.hora12; })())}</b></div>
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
           ${r.abono ? `<div><span>Abono</span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' recibido ✓' : pesos(r.abono) + ' pendiente'}</b></div>` : ''}
         </div>
