@@ -163,11 +163,11 @@ function salir(msg) { ls.del('sesionProfesionalSalon'); S = null; AG = null; sel
 
 function topHtml(v) {
   return `<div class="top"><div>Hola <b>${esc(S.nombre.split(' ')[0])}</b></div><button class="link" id="salir">Salir</button></div>
-    <div class="tabs"><button class="${v === 'ganancias' ? 'on' : ''}" data-v="ganancias">Mis ganancias</button><button class="${v === 'servicios' ? 'on' : ''}" data-v="servicios">Mis servicios</button></div>`;
+    <div class="tabs"><button class="on" data-v="ganancias">Mis finanzas y comisiones</button></div>`;
 }
 function enlacesTop() {
   $('#salir').onclick = () => salir();
-  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => (b.dataset.v === 'servicios' ? vistaServicios() : vistaGanancias()));
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => vistaGanancias());
 }
 
 /* ---------- Mi agenda ---------- */
@@ -287,7 +287,7 @@ async function vistaGanancias() {
       </div>`).join('') : '<p class="muted" style="margin:0">Aún no hay servicios cobrados en este periodo.</p>'}</div>
       <h2>Pagos recibidos</h2>
       <div class="card">${g.pagos.length ? g.pagos.map(x => `<div class="filag"><span>${esc(x.periodo)}<small>${esc(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}</small></span><b>${pesos(x.valor)}</b></div>`).join('') : '<p class="muted" style="margin:0">Todavía no hay pagos registrados.</p>'}</div>
-      <p class="muted">Tu agenda y tus citas las maneja la administración. Si tienes dudas sobre un pago, escríbele.</p>`;
+      <p class="muted">La agenda, las citas y tus servicios los maneja la administración. Si tienes dudas sobre un pago, escríbele.</p>`;
     enlazar();
   } catch (e) {
     if (S) { $('#app').innerHTML = cab + `<div class="err">${esc(e.message)}</div>`; enlazar(); }

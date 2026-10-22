@@ -168,7 +168,7 @@ async function api(params) {
 
 const waLink = (tel, txt) => 'https://wa.me/' + tel + '?text=' + encodeURIComponent(txt);
 const msgBienvenida = (nombre, pin) => 'Hola ' + nombre.split(' ')[0] + ', bienvenida a Beauty Glam. Entra a tu portal de profesional: ' + PORTAL +
-  '\nTu PIN es ' + pin + ' (no lo compartas).\n1) En "Mi agenda" ves tus citas; al terminar cada servicio toca "Finalizado" para que pase a caja.\n2) En "Mis servicios" revisa los servicios que haces.';
+  '\nTu PIN es ' + pin + ' (no lo compartas).\nAhí ves tus finanzas: los servicios que te cobraron, tu comisión, tus propinas y los pagos de cada quincena.';
 
 /* ---------- Ingreso ---------- */
 function vistaLogin(msg) {
@@ -1325,7 +1325,7 @@ function vistaCreado(r) {
       <b>${esc(r.nombre)}</b> <span class="muted">(${esc(r.id)})</span>
       <div class="muted" style="margin-top:8px">PIN del portal</div>
       <div class="grande">${esc(r.pin)}</div>
-      <p class="muted">Entrégale el PIN y el enlace del portal. Ahí sube sus fotos, ve su agenda y marca "Finalizado" al terminar cada servicio. Sus turnos los asignas tú en Agenda → Turnos.</p>
+      <p class="muted">Entrégale el PIN y el enlace del portal. Ahí solo ve sus finanzas y comisiones. Su agenda, sus servicios y sus turnos los manejas tú desde este panel.</p>
     </div>
     ${r.whatsapp ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(r.whatsapp, msgBienvenida(r.nombre, r.pin)))}">Enviarle el acceso por WhatsApp</a>` : ''}
     <button class="btn sec" id="lista">Volver a la lista</button>`;
