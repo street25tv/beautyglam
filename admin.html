@@ -138,6 +138,7 @@
 <main class="wrap" id="app"><p class="muted" style="text-align:center">Cargando…</p></main>
 
 <script src="clientas.js"></script>
+<script src="gestion.js"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 <script>
 /* Misma API de la web de reservas. */
@@ -334,7 +335,7 @@ function botonesCita(c) {
 }
 
 function filaCita(c, conFecha) {
-  return `<div class="cita">
+  return `<div class="cita" id="cita-${esc(c.id)}">
     <div class="cita-top"><b>${conFecha ? esc(fechaCorta(c.fecha)) + ' · ' : ''}${esc(c.hora12)}</b><span class="tag ${ESTADO_CLASE[c.estado] || ''}">${esc(c.estado)}</span></div>
     <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)}${conFecha ? ' · ' + esc(c.profesional) : ''}${c.fin ? ' · hasta ' + esc(h12(c.fin)) : ''}</span></div>
     ${c.abono ? `<div class="muted">Abono: ${c.abonoPagado >= c.abono ? '<span class="tag si">' + pesosC(c.abonoPagado) + ' recibido</span>' : '<span class="tag pend">' + pesosC(c.abonoPagado) + ' de ' + pesosC(c.abono) + '</span>'}</div>` : ''}
@@ -365,7 +366,9 @@ function vistaAgenda(msg, wa) {
     <div class="muted">${g.tienda ? 'Salón abierto ' + esc(g.tienda) : 'El salón está cerrado este día'} · ${activas} ${activas === 1 ? 'cita activa' : 'citas activas'}</div>
     <label for="f-barb">Profesional</label>
     <select id="f-barb"><option value="*">Todos</option>${g.profesionales.map(b => `<option value="${esc(b.id)}" ${A.profesional === b.id ? 'selected' : ''}>${esc(b.nombre)}${b.activo ? '' : ' (inactivo)'}</option>`).join('')}</select>
-    ${visibles.map(b => {
+    <div class="vista-ag"><button class="chip ${A.vista !== 'grilla' ? 'on' : ''}" data-vista="lista">Lista</button><button class="chip ${A.vista === 'grilla' ? 'on' : ''}" data-vista="grilla">Cuadrícula</button></div>
+    ${A.vista === 'grilla' && typeof grillaHtml === 'function' ? grillaHtml(g, visibles) : ''}
+    ${A.vista === 'grilla' ? '' : visibles.map(b => {
       const mias = g.citas.filter(c => c.profesionalId === b.id);
       return `<div class="card">
         <div class="barb"><div><b>${esc(b.nombre)}</b>${b.activo ? '' : '<span class="tag no">Inactivo</span>'}
@@ -393,6 +396,12 @@ function vistaAgenda(msg, wa) {
   if ($('#hoy')) $('#hoy').onclick = () => ir(g.hoy);
   $('#f-dia').onchange = e => { if (e.target.value) ir(e.target.value); };
   $('#f-barb').onchange = e => { A.profesional = e.target.value; vistaAgenda(); };
+  document.querySelectorAll('[data-vista]').forEach(b => b.onclick = () => { A.vista = b.dataset.vista; vistaAgenda(); });
+  // Tocar una cita en la cuadrícula la abre en la lista con sus botones.
+  document.querySelectorAll('[data-gcita]').forEach(el => el.onclick = () => {
+    A.vista = 'lista'; vistaAgenda();
+    setTimeout(() => { const c = document.getElementById('cita-' + el.dataset.gcita); if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.style.outline = '2px solid var(--acc)'; c.style.borderRadius = '10px'; } }, 60);
+  });
   $('#nueva').onclick = () => vistaCitaForm(null);
   $('#ya').onclick = () => vistaAtenderYa();
   document.querySelectorAll('[data-turnos]').forEach(b => b.onclick = () => cargarTurnos(b.dataset.turnos));
@@ -1143,7 +1152,10 @@ function vistaFinanzas(msg, wa) {
       <div class="kpi acc"><span>Para el salón</span><b>${pesosF(t.barberia)}</b><small>comisiones${t.arriendos ? ' y arriendos' : ''}${t.productos ? ' + productos' : ''}${t.membresias ? ' + planes' : ''}</small></div>
       <div class="kpi"><span>Pago a profesionales</span><b>${pesosF(t.pagoProfesionals)}</b><small>${t.porCobrar ? 'te deben ' + pesosF(t.porCobrar) + ' de arriendo' : 'incluye propinas'}</small></div>
       <div class="kpi"><span>Propinas</span><b>${pesosF(t.propinas)}</b><small>ticket promedio ${pesosF(t.ticket)}</small></div>
+      ${F.profesional === '*' && t.utilidad !== undefined ? `<div class="kpi"><span>Egresos</span><b>${pesosF(t.egresos)}</b><small>gastos del salón</small></div>
+      <div class="kpi acc"><span>Utilidad real</span><b>${pesosF(t.utilidad)}</b><small>para el salón − costo de productos − egresos</small></div>` : ''}
     </div>
+    ${F.profesional === '*' ? '<div id="egresos-box"></div>' : ''}
     ${F.profesional === '*' ? `<div class="card"><b>Productos</b><div class="lineas">
       <div><span>Vendido (${t.unidadesProductos} ${t.unidadesProductos === 1 ? 'unidad' : 'unidades'})</span><b>${pesosF(t.productos)}</b></div>
       <div><span>Costo de lo vendido</span><b>${pesosF(t.costoProductos)}</b></div>
@@ -1168,6 +1180,7 @@ function vistaFinanzas(msg, wa) {
     <div class="card"><b>Últimos cobros</b>${d.cobros.length ? d.cobros.map(x => `<div class="cita"><div class="cita-top"><b>${esc(fechaCorta(x.fecha))} · ${esc(h12(x.hora))}</b><b>${pesosF(x.valor + x.propina)}</b></div>
       <div class="muted">${esc(x.cliente)} · ${esc(x.concepto)}${x.profesional ? ' · ' + esc(x.profesional) : ''} · ${esc(x.medio)}${x.propina ? ' · propina ' + pesosF(x.propina) : ''}${x.factura ? ' · ' + esc(x.factura) : ''}</div></div>`).join('') : '<p class="muted">Todavía no hay cobros en este periodo. Se registran al confirmar el pago en Facturar.</p>'}</div>`;
   bindNav();
+  if (typeof pintarEgresos === 'function' && F.profesional === '*') pintarEgresos(d);
   document.querySelectorAll('[data-rango]').forEach(b => b.onclick = () => { F.rango = b.dataset.rango; if (F.rango === 'otro') vistaFinanzas(); else cargarFinanzas(); });
   const otro = () => { if ($('#f-desde').value && $('#f-hasta').value) { F.desde = $('#f-desde').value; F.hasta = $('#f-hasta').value; cargarFinanzas(); } };
   $('#f-desde').onchange = otro; $('#f-hasta').onchange = otro;

@@ -43,7 +43,7 @@ let CL = { sub: 'fichas', q: '' };
 })();
 
 function subNavClientas() {
-  const s = [['fichas', 'Fichas'], ['fidel', 'Fidelización'], ['tarjetas', 'Tarjetas regalo']];
+  const s = [['fichas', 'Fichas'], ['fidel', 'Fidelización'], ['campanas', 'Campañas'], ['tarjetas', 'Tarjetas regalo']];
   return `<div class="chips">${s.map(x => `<button class="chip ${CL.sub === x[0] ? 'on' : ''}" data-sub="${x[0]}">${x[1]}</button>`).join('')}</div>`;
 }
 function bindSubClientas() {
@@ -51,6 +51,7 @@ function bindSubClientas() {
 }
 
 async function cargarClientas(msg) {
+  if (CL.sub === 'campanas' && typeof vistaCampanas === 'function') return vistaCampanas(msg);
   if (CL.sub === 'fidel' || CL.sub === 'tarjetas') return cargarFidelizacion(msg);
   $('#app').innerHTML = nav('clientas') + subNavClientas() + `
     ${msg ? `<div class="okmsg">${esc(msg)}</div>` : ''}
@@ -115,6 +116,7 @@ async function vistaFicha(id, msg) {
       <div id="fc-msg" class="err"></div>
       <button class="btn" id="fc-guardar">Guardar ficha</button>
     </div>
+    ${typeof sellosHtml === 'function' ? sellosHtml(f.sellos) : ''}
     <div class="card">
       <b>Fotos antes y después</b>
       <p class="muted" style="margin:4px 0 0">Solo las ve la administración. Úsalas para recordar cómo quedó y mostrar el cambio.</p>
@@ -142,6 +144,10 @@ async function vistaFicha(id, msg) {
   $('#volver').onclick = () => { CL.sub = 'fichas'; cargarClientas(); };
   document.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => { $('#ci-' + b.dataset.ver).classList.toggle('hidden'); });
   cargarFotosCl(id);
+  if ($('#canjear-sellos')) $('#canjear-sellos').onclick = async () => {
+    if (!confirm('¿Entregar el premio de la tarjeta de sellos a ' + f.nombre + '?')) return;
+    try { const r = await api({ a: 'aCanjearSellos', token: S.token, id }); vistaFicha(id, r.texto); } catch (e) { alert(e.message); }
+  };
   $('#fo-file').onchange = async e => {
     const file = e.target.files[0]; e.target.value = '';
     if (!file) return;

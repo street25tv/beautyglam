@@ -77,6 +77,10 @@
   .chip-f { border: 1.5px solid var(--line); background: var(--card2); color: var(--sub); border-radius: 999px; padding: 7px 12px; cursor: pointer; font-weight: 600; font-size: 13px; }
   .chip-f.on { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); }
   .ig { display: block; text-align: center; margin-top: 8px; color: var(--acc); font-weight: 600; text-decoration: none; }
+  .card.sellos { border: 1.5px solid var(--acc); }
+  .fila-sellos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+  .sello { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed var(--line); display: grid; place-items: center; color: var(--sub); font-size: 13px; }
+  .sello.on { background: var(--acc); color: var(--acc-txt); border: 0; font-size: 18px; }
   .cumple { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
   .cumple select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--txt); font: inherit; }
   .opc { color: var(--sub); font-weight: 400; font-size: 13px; }
@@ -758,7 +762,11 @@ async function consultar() {
         ${r.mapa ? `<a class="mapa" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar ↗</a>` : ''}
       </div>
       ${r.membresia ? `<div class="card"><b>${esc(r.membresia.plan)}</b><div class="muted">Te quedan ${r.membresia.restantes} servicios · vence el ${esc(r.membresia.vence)}</div></div>` : ''}
-      ${r.cancelable ? '<button class="btn sec" id="mc-cancelar">Cancelar esta cita</button>' : ''}`;
+      ${r.sellos ? `<div class="card sellos"><b>Tu tarjeta de sellos</b>
+        <div class="fila-sellos">${Array.from({ length: r.sellos.meta }, (_, i) => `<span class="sello ${i < r.sellos.sellos ? 'on' : ''}">${i < r.sellos.sellos ? '✦' : i + 1}</span>`).join('')}</div>
+        <p class="muted" style="margin:6px 0 0">${r.sellos.listo ? '¡Completaste tu tarjeta! En tu próxima visita recibes ' + esc(r.sellos.premio) + '.' : 'Llevas ' + r.sellos.sellos + ' de ' + r.sellos.meta + '. Al completarla recibes ' + esc(r.sellos.premio) + '.'}</p></div>` : ''}
+      ${r.cancelable ? '<button class="btn sec" id="mc-cancelar">Cancelar esta cita</button>' : ''}
+      ${r.tarde ? `<p class="muted">Ya faltan menos de ${r.horasCancelar} horas para tu cita, así que no se puede cancelar en línea. ${D && D.whatsapp ? `<a href="${esc(waLink(D.whatsapp, 'Hola, necesito cancelar o cambiar mi cita ' + r.cita + '.'))}" target="_blank" rel="noopener" style="color:var(--acc)">Escríbenos por WhatsApp</a>.` : ''}</p>` : ''}`;
     if ($('#mc-cancelar')) $('#mc-cancelar').onclick = async () => {
       if (!confirm('¿Seguro que quieres cancelar la cita ' + r.cita + '?')) return;
       const b = $('#mc-cancelar'); b.disabled = true; b.textContent = 'Cancelando…';
