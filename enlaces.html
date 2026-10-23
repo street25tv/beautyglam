@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beauty Glam by Nathaly Torres · Enlaces</title>
+<meta name="description" content="Reserva tu cita, escríbenos por WhatsApp y síguenos en Instagram.">
+<meta name="theme-color" content="#17110e">
+<link rel="icon" href="image.jpg">
+<meta property="og:image" content="image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #17110e; --card: #221915; --card2: #2e231e; --line: #403128; --txt: #f6efea; --sub: #c4b1a6; --acc: #cfb2a5; --acc-txt: #2b170f; --wa: #25d366; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: radial-gradient(120% 60% at 50% 0%, #2a1d17, var(--bg) 60%); color: var(--txt); font: 15px/1.45 Inter, system-ui, sans-serif; }
+  .wrap { max-width: 460px; margin: 0 auto; padding: 28px 16px 40px; text-align: center; }
+  .logo { width: min(180px, 46vw); height: auto; border-radius: 50%; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; margin: 10px 0 2px; }
+  .sub { color: var(--sub); font-size: 14px; }
+  .links { display: grid; gap: 10px; margin-top: 22px; }
+  .links a { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 16px; border-radius: 14px; text-decoration: none;
+    background: var(--card); border: 1.5px solid var(--line); color: var(--txt); font-weight: 600; }
+  .links a.prin { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); font-size: 17px; }
+  .links a.wa { background: var(--wa); color: #06210f; border-color: var(--wa); }
+  .links a:active { transform: scale(.98); }
+  .links .ico { width: 20px; text-align: center; }
+  .pie { margin-top: 22px; color: var(--sub); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="logo" src="logo.png" alt="Beauty Glam by Nathaly Torres" width="520" height="520">
+  <h1 id="nombre">Beauty Glam</h1>
+  <div class="sub" id="ciudad">Uñas · Pestañas · Cejas · Maquillaje</div>
+  <div class="links" id="links">
+    <a class="prin" href="./"><span class="ico">✦</span> Reservar mi cita</a>
+    <a href="./?tab=micita"><span class="ico">◷</span> Consultar o cancelar mi cita</a>
+  </div>
+  <div class="pie" id="pie"></div>
+</div>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const wa = (t, m) => 'https://wa.me/' + t + '?text=' + encodeURIComponent(m);
+function pintar(d) {
+  document.getElementById('nombre').textContent = d.negocio;
+  if (d.ciudad) document.getElementById('ciudad').textContent = (d.categorias || []).slice(0, 4).join(' · ') + ' · ' + d.ciudad;
+  const l = [];
+  if (d.whatsapp) l.push(`<a class="wa" target="_blank" rel="noopener" href="${esc(wa(d.whatsapp, 'Hola, quiero información de ' + d.negocio + '.'))}"><span class="ico">✆</span> Escríbenos por WhatsApp</a>`);
+  if (d.instagram) l.push(`<a target="_blank" rel="noopener" href="https://instagram.com/${encodeURIComponent(d.instagram)}"><span class="ico">◎</span> Instagram @${esc(d.instagram)}</a>`);
+  if (d.whatsapp) l.push(`<a target="_blank" rel="noopener" href="${esc(wa(d.whatsapp, 'Hola, quiero comprar una tarjeta regalo de ' + d.negocio + ' 🎁'))}"><span class="ico">🎁</span> Regala una tarjeta regalo</a>`);
+  if (d.direccion) l.push(`<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.direccion + ' ' + (d.ciudad || ''))}"><span class="ico">⌖</span> Cómo llegar</a>`);
+  if (d.resena) l.push(`<a target="_blank" rel="noopener" href="${esc(d.resena)}"><span class="ico">★</span> Déjanos tu reseña en Google</a>`);
+  document.getElementById('links').insertAdjacentHTML('beforeend', l.join(''));
+  document.getElementById('pie').textContent = d.direccion ? d.direccion + (d.ciudad ? ', ' + d.ciudad : '') : '';
+  if (d.pixel && !window.fbq) {
+    !function (f, b, e, v, n, t, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+      if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = []; t = b.createElement(e); t.async = !0; t.src = v;
+      s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s); }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', d.pixel); fbq('track', 'PageView');
+  }
+}
+fetch(API + '?a=datos').then(r => r.json()).then(d => { if (d.ok) pintar(d); }).catch(() => {});
+</script>
+</body>
+</html>

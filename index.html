@@ -71,6 +71,12 @@
   .btn:disabled { opacity: .5; cursor: default; }
   .btn.sec { background: var(--card2); color: var(--txt); }
   .btn.wa { background: var(--wa); color: #06210f; }
+  .card.espera { border: 1.5px dashed var(--acc); }
+  .card.espera input { width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); color: var(--txt); }
+  .franjas { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip-f { border: 1.5px solid var(--line); background: var(--card2); color: var(--sub); border-radius: 999px; padding: 7px 12px; cursor: pointer; font-weight: 600; font-size: 13px; }
+  .chip-f.on { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); }
+  .ig { display: block; text-align: center; margin-top: 8px; color: var(--acc); font-weight: 600; text-decoration: none; }
   .cumple { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
   .cumple select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--txt); font: inherit; }
   .opc { color: var(--sub); font-weight: 400; font-size: 13px; }
@@ -598,7 +604,12 @@ async function cargarHoras() {
     const r = await api(multi ? { a: 'libres', fecha: R.fecha, servicio: R.servicios.join(','), asig: JSON.stringify(R.asig) }
       : { a: 'libres', fecha: R.fecha, profesional: R.profesional, servicio: R.servicios.join(',') });
     if (n !== pedidoHoras || !$('#horas')) return;
-    if (!r.libres.length) { caja.className = 'muted'; caja.textContent = multi ? 'Ese día no alcanzan a encadenarse estos servicios con esas profesionales. Prueba otro día o elige "La que esté libre".' : 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'; return; }
+    if (!r.libres.length) {
+      caja.className = '';
+      caja.innerHTML = `<p class="muted">${multi ? 'Ese día no alcanzan a encadenarse estos servicios con esas profesionales. Prueba otro día o elige "La que esté libre".' : 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'}</p>` + formEspera();
+      enlazarEspera();
+      return;
+    }
     if (multi && R.hora) { const s = r.libres.find(x => x.hora === R.hora); if (s) R.plan = s.plan; }
     caja.className = 'horas';
     caja.innerHTML = r.libres.map(s => `<button class="chip ${s.hora === R.hora ? 'on' : ''}" data-h="${s.hora}">${hora12(s.hora).replace(' ', '&nbsp;')}</button>`).join('');
@@ -615,6 +626,41 @@ async function cargarHoras() {
   }
 }
 
+/* Lista de espera: si no hay cupo ese día, la clienta deja sus datos y le escribimos si se libera. */
+function formEspera() {
+  const yo = leerLS('cliente') || {};
+  return `<div class="card espera"><b>¿Te avisamos si se libera un cupo?</b>
+    <p class="muted" style="margin:4px 0 8px">Te anotamos en la lista de espera del ${esc(fechaLarga(R.fecha))}.</p>
+    <div class="franjas">${['Mañana', 'Tarde', 'Cualquiera'].map(f => `<button type="button" class="chip-f ${(R.franja || 'Cualquiera') === f ? 'on' : ''}" data-franja="${f}">${f === 'Cualquiera' ? 'Cualquier hora' : f}</button>`).join('')}</div>
+    <input id="le-nombre" placeholder="Tu nombre" autocomplete="name" value="${esc(R.nombre != null ? R.nombre : yo.nombre || '')}">
+    <input id="le-tel" type="tel" inputmode="numeric" placeholder="WhatsApp 300 123 4567" autocomplete="tel" value="${esc(R.tel != null ? R.tel : yo.tel || '')}">
+    <div class="err" id="le-err"></div>
+    <button class="btn" id="le-enviar">Avísame si se libera</button></div>`;
+}
+function enlazarEspera() {
+  document.querySelectorAll('[data-franja]').forEach(b => b.onclick = () => { R.franja = b.dataset.franja; document.querySelectorAll('[data-franja]').forEach(x => x.classList.toggle('on', x === b)); });
+  $('#le-enviar').onclick = async () => {
+    const b = $('#le-enviar'); b.disabled = true; $('#le-err').textContent = '';
+    try {
+      const r = await api({ a: 'espera', nombre: $('#le-nombre').value, tel: $('#le-tel').value.replace(/\D/g, ''), fecha: R.fecha, servicio: R.servicios.join(','),
+        profesional: R.servicios.length > 1 ? '*' : (R.profesional || '*'), franja: R.franja || 'Cualquiera', notas: (R.notas || '').trim() }, true);
+      guardar('cliente', { nombre: $('#le-nombre').value.trim(), tel: $('#le-tel').value.replace(/\D/g, '') });
+      $('.card.espera').innerHTML = `<b>✓ Estás en la lista de espera</b><p class="muted" style="margin:6px 0 0">${esc(r.texto)}</p>`;
+      pixel('Lead');
+    } catch (e) { b.disabled = false; $('#le-err').textContent = e.message; }
+  };
+}
+
+/* Meta Pixel (Configuración → "Meta Pixel ID"). */
+function iniciarPixel() {
+  if (!D || !D.pixel || window.fbq) return;
+  !function (f, b, e, v, n, t, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+    if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = []; t = b.createElement(e); t.async = !0; t.src = v;
+    s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s); }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', D.pixel); fbq('track', 'PageView');
+}
+function pixel(evento, datos) { try { if (window.fbq) fbq('track', evento, datos || {}); } catch (e) { /* sin pixel */ } }
+
 async function confirmar() {
   const nombre = $('#nombre').value.trim(), tel = $('#tel').value.replace(/\D/g, '');
   if (nombre.length < 2) return ($('#err').textContent = 'Escribe tu nombre.');
@@ -629,6 +675,7 @@ async function confirmar() {
     // Detalle por servicio: el que manda el servidor (visita) o el calculado aquí (una profesional).
     const segs = r.segmentos || turnosCita(Eres, r.profesional, horaRes).map(x => ({ servicio: x.s.nombre, profesional: r.profesional, hora: deMin(x.ini), fin: deMin(x.fin), precio: x.s.precio, variable: x.s.variable }));
     guardar('cliente', { nombre, tel });
+    pixel('Schedule', { value: r.precio, currency: 'COP' });
     guardar('ultimaCita', { cita: r.cita, t: r.tel });
     const enlace = location.origin + location.pathname + '?cita=' + r.cita + '&t=' + r.tel;
     const waDest = r.waProfesional || D.whatsapp;
@@ -649,6 +696,7 @@ async function confirmar() {
       </div>
       ${r.abono ? `<div class="card abono">
         <b>Paga el abono para confirmar tu cita</b><span class="monto">${pesos(r.abono)}</span>
+        ${r.porInasistencia ? '<p class="muted">Como tuviste una cita reciente a la que no pudiste asistir, esta vez te pedimos abono para separar el espacio.</p>' : ''}
         <p>${esc(r.datosAbono || 'Escríbenos por WhatsApp y te enviamos los datos para el abono.')}</p>
         ${r.politicaAbono ? `<p class="muted">${esc(r.politicaAbono)}</p>` : ''}
         <p class="muted">Tu cita queda <b>pendiente</b> hasta que el salón reciba el abono.</p>
@@ -739,6 +787,8 @@ function pintarDatos() {
   const horas = D.horario.map((h, i) => DIAS[i] + ' ' + (cerrado(h) ? 'cerrado' : h.replace('-', '–'))).slice(1).concat(DIAS[0] + ' ' + (cerrado(D.horario[0]) ? 'cerrado' : D.horario[0].replace('-', '–')));
   $('#info').innerHTML = esc(D.direccion) + (D.ciudad ? ', ' + esc(D.ciudad) : '') + '<br>' + esc(horas.join(' · '));
   if (D.whatsapp) { const s = $('#soporte'); s.href = waLink(D.whatsapp, 'Hola, tengo una pregunta.'); s.classList.remove('hidden'); }
+  if (D.instagram && !$('#ig')) $('#info').insertAdjacentHTML('afterend', `<a id="ig" class="ig" target="_blank" rel="noopener" href="https://instagram.com/${encodeURIComponent(D.instagram)}">@${esc(D.instagram)} en Instagram</a>`);
+  iniciarPixel();
 }
 
 (async function iniciar() {
@@ -755,6 +805,7 @@ function pintarDatos() {
     if (!previo) $('#v-reservar').innerHTML = '<div class="err">' + esc(e.message) + '</div><button class="btn sec" onclick="location.reload()">Reintentar</button>';
   }
   if (q.get('cita') && D) { tab('micita'); vistaMiCita(q.get('cita'), q.get('t')); }
+  else if (q.get('tab') === 'micita' && D) { tab('micita'); vistaMiCita(); }
 })();
 </script>
 </body>

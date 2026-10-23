@@ -6,6 +6,9 @@
 <title>Beauty Glam · Administración</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#17110e">
+<link rel="manifest" href="manifest-admin.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -135,6 +138,7 @@
 <main class="wrap" id="app"><p class="muted" style="text-align:center">Cargando…</p></main>
 
 <script src="clientas.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 <script>
 /* Misma API de la web de reservas. */
 const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
@@ -370,8 +374,19 @@ function vistaAgenda(msg, wa) {
         ${mias.length ? mias.map(c => filaCita(c, false)).join('') : '<p class="muted" style="margin:10px 0 0">Sin citas.</p>'}
       </div>`;
     }).join('') || '<p class="muted">No hay profesionales activos.</p>'}
-    ${huerfanas.length ? `<div class="card"><b>Otras citas</b><div class="muted">De profesionales que ya no están en la lista.</div>${huerfanas.map(c => filaCita(c, false)).join('')}</div>` : ''}`;
+    ${huerfanas.length ? `<div class="card"><b>Otras citas</b><div class="muted">De profesionales que ya no están en la lista.</div>${huerfanas.map(c => filaCita(c, false)).join('')}</div>` : ''}
+    ${(g.espera || []).length ? `<div class="card pend-card"><b>Lista de espera de este día (${g.espera.length})</b>
+      <div class="muted">Clientas que no encontraron cupo. Si se libera uno, escríbeles.</div>
+      ${g.espera.map(e => `<div class="cita"><div class="cita-top"><b>${esc(e.cliente)}</b><span class="tag pend">${esc(e.franja === 'Cualquiera' ? 'Cualquier hora' : e.franja)}</span></div>
+        <div class="muted">${esc(e.servicio)} · ${esc(e.profesional)}${e.notas ? ' · ' + esc(e.notas) : ''}</div>
+        <div class="acciones">${e.wa ? `<a class="btn mini wa" target="_blank" rel="noopener" href="${esc(e.wa)}" data-le="${esc(e.id)}" data-le-est="Contactada">Avisar cupo</a>` : ''}
+          <button class="btn mini sec" data-le="${esc(e.id)}" data-le-est="Agendada">Ya agendó</button>
+          <button class="btn mini sec" data-le="${esc(e.id)}" data-le-est="Descartada">Quitar</button></div></div>`).join('')}</div>` : ''}`;
   bindNav();
+  document.querySelectorAll('[data-le]').forEach(b => b.addEventListener('click', async () => {
+    try { await api({ a: 'aEsperaEstado', token: S.token, id: b.dataset.le, estado: b.dataset.leEst }); if (b.dataset.leEst !== 'Contactada') cargarAgenda(); else b.textContent = 'Avisada ✓'; }
+    catch (e) { alert(e.message); }
+  }));
   const ir = f => { A.fecha = f; cargarAgenda(); };
   $('#ant').onclick = () => ir(sumarDia(g.fecha, -1));
   $('#sig').onclick = () => ir(sumarDia(g.fecha, 1));
@@ -1135,9 +1150,10 @@ function vistaFinanzas(msg, wa) {
       <div class="fuerte"><span>Ganancia en productos</span><b>${pesosF(t.gananciaProductos)}</b></div></div>
       ${d.productosTop.length ? '<div class="muted" style="margin-top:8px">Más vendidos</div><div class="lineas">' + d.productosTop.map(p => `<div><span>${esc(p.nombre)} · ${p.cantidad}</span><b>${pesosF(p.valor)}</b></div>`).join('') + '</div>' : ''}</div>` : ''}
     <h2>Por profesional</h2>
-    ${d.profesionales.filter(b => b.servicios || b.arriendo).length ? d.profesionales.filter(b => b.servicios || b.arriendo).map(b => `<div class="card">
+    ${d.profesionales.filter(b => b.servicios || b.arriendo || (b.ocupacion && b.ocupacion.citas)).length ? d.profesionales.filter(b => b.servicios || b.arriendo || (b.ocupacion && b.ocupacion.citas)).map(b => `<div class="card">
       <div class="barb"><div><b>${esc(b.nombre)}</b><div class="muted">${b.tipo === 'Arriendo' ? 'Arriendo ' + pesosF(b.arriendoSemanal) + '/semana' : (b.pctMixto ? 'Comisión por servicio' : 'Comisión ' + b.pct + '% para el profesional')} · ${b.servicios} serv.</div></div></div>
       <div class="lineas">
+        ${b.ocupacion && b.ocupacion.turno ? `<div><span>Ocupación de su agenda</span><b>${b.ocupacion.pct}% <small class="muted">(${Math.round(b.ocupacion.citas / 60)} de ${Math.round(b.ocupacion.turno / 60)} h)</small></b></div>` : ''}
         <div><span>Cobrado</span><b>${pesosF(b.cobrado)}</b></div>
         <div><span>${b.tipo === 'Arriendo' ? 'Sus servicios − arriendo' : 'Su comisión'}</span><b>${pesosF(b.parte)}</b></div>
         <div><span>Propinas</span><b>${pesosF(b.propinas)}</b></div>

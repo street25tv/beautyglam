@@ -30,6 +30,14 @@ let CL = { sub: 'fichas', q: '' };
     .tarjeta-reg { border: 2px dashed var(--acc); border-radius: 14px; padding: 14px; text-align: center; margin-top: 10px; }
     .tarjeta-reg .cod { font-family: Lora, Georgia, serif; font-size: 28px; letter-spacing: 2px; color: var(--acc); }
     .cumple-sel { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+    .fotos-cl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .fotos-cl figure { margin: 0; position: relative; border-radius: 12px; overflow: hidden; background: var(--card2, #2e231e); }
+    .fotos-cl img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; cursor: zoom-in; }
+    .fotos-cl figcaption { padding: 6px 8px; font-size: 12px; color: var(--sub); }
+    .fotos-cl .tipo { position: absolute; top: 6px; left: 6px; background: var(--acc); color: #2b170f; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; }
+    .fotos-cl .x { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
+    .visor { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.92); display: grid; place-items: center; padding: 16px; }
+    .visor img { max-width: 100%; max-height: 90vh; border-radius: 10px; }
   `;
   document.head.appendChild(st);
 })();
@@ -108,6 +116,15 @@ async function vistaFicha(id, msg) {
       <button class="btn" id="fc-guardar">Guardar ficha</button>
     </div>
     <div class="card">
+      <b>Fotos antes y después</b>
+      <p class="muted" style="margin:4px 0 0">Solo las ve la administración. Úsalas para recordar cómo quedó y mostrar el cambio.</p>
+      <div class="fila"><div><label for="fo-tipo">Tipo</label><select id="fo-tipo"><option>Antes</option><option selected>Después</option><option>Referencia</option></select></div>
+        <div><label for="fo-nota">Nota (opcional)</label><input id="fo-nota" maxlength="120" placeholder="Laminado + pigmento"></div></div>
+      <label class="btn mini sec" for="fo-file" style="display:inline-block;margin-top:10px">+ Subir foto</label><input type="file" id="fo-file" accept="image/*" class="hidden">
+      <div class="muted" id="fo-msg"></div>
+      <div class="fotos-cl" id="fo-grid"><p class="muted">Cargando fotos…</p></div>
+    </div>
+    <div class="card">
       <b>Consentimientos</b> ${vig.length ? `<span class="tag si">Vigente: ${esc(vig.join(', '))}</span>` : '<span class="tag pend">Ninguno vigente</span>'}
       ${f.consentimientos.length ? f.consentimientos.map((c, i) => `<div class="fid-item"><div><b>${esc(fechaCorta(c.fecha))} · ${esc(c.categorias)}</b><div class="muted">Firmó: ${esc(c.firmadoPor)}</div></div>
         <button class="btn mini sec" data-ver="${i}">Ver</button></div><div class="hidden" id="ci-${i}">
@@ -124,6 +141,18 @@ async function vistaFicha(id, msg) {
   bindNav();
   $('#volver').onclick = () => { CL.sub = 'fichas'; cargarClientas(); };
   document.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => { $('#ci-' + b.dataset.ver).classList.toggle('hidden'); });
+  cargarFotosCl(id);
+  $('#fo-file').onchange = async e => {
+    const file = e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    $('#fo-msg').className = 'muted'; $('#fo-msg').textContent = 'Subiendo…';
+    try {
+      const d = await procesarFoto(file, 720, 900);
+      const r = await api({ a: 'aSubirFotoClienta', token: S.token, id, datos: d, tipo: $('#fo-tipo').value, nota: $('#fo-nota').value });
+      $('#fo-msg').textContent = r.texto; $('#fo-nota').value = '';
+      cargarFotosCl(id);
+    } catch (err) { $('#fo-msg').className = 'err'; $('#fo-msg').textContent = err.message; }
+  };
   $('#fc-guardar').onclick = async () => {
     const b = $('#fc-guardar'); b.disabled = true; $('#fc-msg').textContent = '';
     const dia = $('#fc-dia').value, mes = $('#fc-mes').value;
@@ -221,4 +250,22 @@ function vistaTarjetas(msg, wa, nueva) {
     try { const r = await api({ a: 'aAnularTarjeta', token: S.token, codigo: b.dataset.anular }); FIDEL = await api({ a: 'aFidelizacion', token: S.token }); vistaTarjetas(r.texto); }
     catch (e) { alert(e.message); }
   });
+}
+
+async function cargarFotosCl(id) {
+  const g = $('#fo-grid');
+  try {
+    const r = await api({ a: 'aFotosClienta', token: S.token, id });
+    if (!$('#fo-grid')) return;
+    g.innerHTML = r.fotos.length ? r.fotos.map(f => `<figure><span class="tipo">${esc(f.tipo)}</span><button class="x" data-fdel="${esc(f.id)}" aria-label="Borrar foto">✕</button>
+      <img src="${esc(f.src)}" alt="${esc(f.tipo)}" data-zoom><figcaption>${esc(fechaCorta(f.fecha))}${f.nota ? ' · ' + esc(f.nota) : ''}</figcaption></figure>`).join('')
+      : '<p class="muted">Aún no hay fotos.</p>';
+    g.querySelectorAll('[data-zoom]').forEach(im => im.onclick = () => {
+      const v = document.createElement('div'); v.className = 'visor'; v.innerHTML = `<img src="${im.src}" alt="">`; v.onclick = () => v.remove(); document.body.appendChild(v);
+    });
+    g.querySelectorAll('[data-fdel]').forEach(b => b.onclick = async () => {
+      if (!confirm('¿Borrar esta foto?')) return;
+      try { await api({ a: 'aBorrarFotoClienta', token: S.token, id, foto: b.dataset.fdel }); cargarFotosCl(id); } catch (e) { alert(e.message); }
+    });
+  } catch (e) { g.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
