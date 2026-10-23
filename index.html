@@ -114,6 +114,7 @@
   .btn-agregar b { display: block; font-size: 16px; }
   .btn-agregar small { color: var(--sub); font-size: 13px; }
   .acc-serv .link { align-self: flex-start; }
+  .acc-serv.final { margin-top: 18px; }
   .opt.elegido { cursor: default; }
   .link { background: none; border: 0; color: var(--acc); cursor: pointer; padding: 10px 0 0; font-weight: 600; font-size: 14px; }
   .hidden { display: none !important; }
@@ -427,7 +428,7 @@ function vistaReservar() {
       <span class="mini">${imgFoto(s.id, s.cat, s.nombre, true)}<span class="check" aria-hidden="true">✓</span></span>
       <span class="opt-txt"><b>${esc(s.nombre)}</b>${s.desc ? `<span class="desc">${esc(s.desc)}</span>` : ''}</span>
       <span class="meta">${precioTxt(s.precio, s.variable)}<br>${dur(s.dur)}</span></div>`).join('') + '</div>';
-    html += `<div class="acc-serv">${E.l.length < 6 ? `<button class="btn-agregar" id="agregar-serv"><span class="mas" aria-hidden="true">+</span>
+    html += `<div class="acc-serv">${E.l.length < 6 ? `<button class="btn-agregar" id="agregar-serv" data-agregar><span class="mas" aria-hidden="true">+</span>
       <span><b>Agregar otro servicio</b><small>${E.l.length === 1 ? '¿También uñas, pies, cejas…? Súmalo a la misma visita' : 'Puedes sumar hasta 6 servicios en la misma visita'}</small></span></button>` : ''}
       <button class="link" id="cambiar-serv">← ${E.l.length > 1 ? 'Empezar de nuevo' : 'Cambiar servicio'}</button></div>`;
   }
@@ -504,11 +505,13 @@ function vistaReservar() {
         ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
         ${(R.notas || '').trim() ? `<div><span>Tus notas</span><b>${esc(R.notas.trim())}</b></div>` : ''}
       </div>
-      <label for="nombre">Nombre</label><input id="nombre" autocomplete="name" value="${esc(yo.nombre || '')}" placeholder="Tu nombre">
-      <label for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="numeric" autocomplete="tel" value="${esc(yo.tel || '')}" placeholder="300 123 4567">
+      <label for="nombre">Nombre</label><input id="nombre" autocomplete="name" value="${esc(R.nombre != null ? R.nombre : yo.nombre || '')}" placeholder="Tu nombre">
+      <label for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="numeric" autocomplete="tel" value="${esc(R.tel != null ? R.tel : yo.tel || '')}" placeholder="300 123 4567">
       <div id="err" class="err"></div>
       <button class="btn" id="confirmar">${E.abono ? 'Reservar y ver cómo pagar el abono' : 'Confirmar reserva'}</button>
-      <p class="muted">${E.variable ? 'El valor final depende del largo y del estado de tu cabello o uñas. ' : ''}${E.abono ? 'El resto lo pagas en el salón. ' : 'Pagas en el salón. '}${esc(D.advertencia)}</p>`;
+      <p class="muted">${E.variable ? 'El valor final depende del largo y del estado de tu cabello o uñas. ' : ''}${E.abono ? 'El resto lo pagas en el salón. ' : 'Pagas en el salón. '}${esc(D.advertencia)}</p>
+      ${E.l.length < 6 ? `<div class="acc-serv final"><button class="btn-agregar" data-agregar><span class="mas" aria-hidden="true">+</span>
+        <span><b>Agregar otro servicio</b><small>Súmalo a esta misma visita sin perder lo que ya elegiste</small></span></button></div>` : ''}`;
   }
   const pistaPrev = $('#pista'), posPrev = pistaPrev ? pistaPrev.scrollLeft : 0;
   v.innerHTML = html;
@@ -525,10 +528,18 @@ function vistaReservar() {
   });
   v.querySelectorAll('[data-asig]').forEach(b => b.onclick = () => { R.asig[b.dataset.asig] = b.dataset.pro; R.hora = null; R.plan = null; vistaReservar(); });
   if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
-  if ($('#agregar-serv')) $('#agregar-serv').onclick = () => { R.agregando = true; R.hora = null; vistaReservar(); };
+  // "Agregar otro servicio" arriba (paso 1) y al final (paso 5): guarda lo escrito y abre la lista.
+  v.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => {
+    if ($('#nombre')) R.nombre = $('#nombre').value;
+    if ($('#tel')) R.tel = $('#tel').value;
+    R.agregando = true; R.hora = null; R.plan = null; vistaReservar();
+    setTimeout(() => { const p = $('#paso1'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  });
   if ($('#no-agregar')) $('#no-agregar').onclick = () => { R.agregando = false; vistaReservar(); };
   v.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { R.servicios = R.servicios.filter(id => id !== b.dataset.quitar); R.agregando = false; R.hora = null; vistaReservar(); });
   if ($('#notas')) $('#notas').oninput = e => { R.notas = e.target.value; };
+  if ($('#nombre')) $('#nombre').oninput = e => { R.nombre = e.target.value; };
+  if ($('#tel')) $('#tel').oninput = e => { R.tel = e.target.value; };
   if ($('#cambiar')) $('#cambiar').onclick = () => { R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   v.querySelectorAll('[data-b]').forEach(el => {
     const elegir = () => {
