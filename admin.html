@@ -22,7 +22,7 @@
   .titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; letter-spacing: 1px; }
   h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 700; letter-spacing: .2px; font-size: 24px; margin: 20px 0 8px; }
   label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 5px; }
-  input, select { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; outline: none; }
+  input, select, textarea { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; outline: none; font: inherit; color: inherit; }
   input:focus, select:focus { border-color: var(--acc); }
   .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px; font-weight: 700; font-size: 16px; cursor: pointer;
          background: var(--acc); color: var(--acc-txt); margin-top: 14px; text-align: center; text-decoration: none; }
@@ -124,6 +124,7 @@
   .galeria img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .borrar { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(0,0,0,.7); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
   .hidden { display: none !important; }
+  .consent-pend { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -133,6 +134,7 @@
 </header>
 <main class="wrap" id="app"><p class="muted" style="text-align:center">Cargando…</p></main>
 
+<script src="clientas.js"></script>
 <script>
 /* Misma API de la web de reservas. */
 const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
@@ -260,12 +262,14 @@ function nav(activa) {
       <button class="tab ${activa === 'facturar' ? 'on' : ''}" data-nav="facturar">Facturar</button>
       <button class="tab ${activa === 'productos' ? 'on' : ''}" data-nav="productos">Productos</button>
       <button class="tab ${activa === 'finanzas' ? 'on' : ''}" data-nav="finanzas">Finanzas</button>
+      <button class="tab ${activa === 'clientas' ? 'on' : ''}" data-nav="clientas">Clientas</button>
       <button class="tab ${activa === 'servicios' ? 'on' : ''}" data-nav="servicios">Servicios</button>
       <button class="tab ${activa === 'profesionales' ? 'on' : ''}" data-nav="profesionales">Profesionales</button>
     </div><button class="link" id="salir">Salir</button></div>`;
 }
 function bindNav() {
-  const ir = { agenda: cargarAgenda, facturar: cargarFacturacion, productos: cargarProductos, finanzas: cargarFinanzas, servicios: cargarServicios, profesionales: cargar };
+  const ir = { agenda: cargarAgenda, facturar: cargarFacturacion, productos: cargarProductos, finanzas: cargarFinanzas, servicios: cargarServicios, profesionales: cargar,
+    clientas: () => (typeof cargarClientas === 'function' ? cargarClientas() : cargarAgenda()) };
   document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => (ir[b.dataset.nav] || cargarAgenda)());
   if ($('#salir')) $('#salir').onclick = () => salir();
 }
@@ -331,6 +335,9 @@ function filaCita(c, conFecha) {
     <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)}${conFecha ? ' · ' + esc(c.profesional) : ''}${c.fin ? ' · hasta ' + esc(h12(c.fin)) : ''}</span></div>
     ${c.abono ? `<div class="muted">Abono: ${c.abonoPagado >= c.abono ? '<span class="tag si">' + pesosC(c.abonoPagado) + ' recibido</span>' : '<span class="tag pend">' + pesosC(c.abonoPagado) + ' de ' + pesosC(c.abono) + '</span>'}</div>` : ''}
     ${c.notas ? `<div class="muted">${esc(c.notas)}</div>` : ''}
+    ${c.consent ? `<div class="consent-pend"><span class="tag pend">Falta consentimiento: ${esc(c.consent.faltan.join(', '))}</span>
+      ${c.consent.wa ? `<a class="btn mini sec" target="_blank" rel="noopener" href="${esc(c.consent.wa)}">Enviar link</a>` : ''}
+      <a class="btn mini sec" target="_blank" rel="noopener" href="${esc(c.consent.link)}&salon=1">Firmar en el salón</a></div>` : ''}
     <div class="acciones">${botonesCita(c)}</div>
   </div>`;
 }
@@ -689,7 +696,9 @@ async function vistaFactura(c, volver) {
     </div>
     <div class="card">
       <label for="k-medio" style="margin-top:0">Medio de pago</label>
-      <select id="k-medio">${info.medios.map(m => `<option>${esc(m)}</option>`).join('')}</select>
+      <select id="k-medio">${info.medios.map(m => `<option>${esc(m)}</option>`).join('')}${c ? '<option>Tarjeta regalo</option>' : ''}</select>
+      <div id="k-tarj-box" class="hidden"><label for="k-tarj">Código de la tarjeta regalo</label><input id="k-tarj" placeholder="BG-XXXXXX" autocapitalize="characters">
+        <div class="muted" id="k-tarj-info">Paga solo el servicio. Productos y propina se cobran en otra factura.</div></div>
       <div class="lineas" id="k-resumen" style="margin-top:10px"></div>
     </div>
     <div id="msg" class="err"></div>
@@ -732,13 +741,20 @@ async function vistaFactura(c, volver) {
     $('#k-cant').value = 1; resumen();
   };
   resumen();
+  $('#k-medio').addEventListener('change', () => { $('#k-tarj-box').classList.toggle('hidden', $('#k-medio').value !== 'Tarjeta regalo'); });
+  $('#k-tarj').onchange = async () => {
+    const v = $('#k-tarj').value.trim(); if (!v) return;
+    try { const t = (await api({ a: 'aTarjeta', token: S.token, codigo: v })).tarjeta;
+      $('#k-tarj-info').textContent = t.codigo + ' · ' + t.estado + ' · saldo ' + pesosC(t.saldo) + ' · vence ' + t.venceTxt;
+    } catch (e) { $('#k-tarj-info').textContent = e.message; }
+  };
   $('#confirmar').onclick = async () => {
     const total = resumen();
     if (!c && !lineas.length) { $('#msg').textContent = 'Agrega al menos un producto.'; return; }
     if (!confirm('¿Confirmar el pago de ' + pesosC(total) + (total ? ' en ' + $('#k-medio').value : '') + '?')) return;
     const b = $('#confirmar'); b.disabled = true; b.textContent = 'Guardando…'; $('#msg').textContent = '';
     try {
-      const p = { a: 'aFacturar', token: S.token, productos: lineas, medio: $('#k-medio').value };
+      const p = { a: 'aFacturar', token: S.token, productos: lineas, medio: $('#k-medio').value, tarjeta: $('#k-tarj').value };
       if (c) Object.assign(p, { cita: c.id, profesional: $('#k-barb').value, valor: $('#k-valor').value, propina: $('#k-prop').value, usarMembresia: !!($('#k-memb') && $('#k-memb').checked) });
       else Object.assign(p, { nombre: $('#k-nombre').value, tel: $('#k-tel').value });
       const r = await api(p);
@@ -928,6 +944,11 @@ function vistaServicioForm(s) {
       <div class="fila"><div><input id="s-abono" inputmode="numeric" value="${esc(nuevo ? '' : s.abono || 0)}" placeholder="${esc(AD.pct)}"></div>
         <div><select id="s-abono-modo"><option value="pct" ${nuevo ? 'selected' : ''}>% del precio</option><option value="val" ${nuevo ? '' : 'selected'}>Valor en $</option></select></div></div>
       <div class="muted" id="s-abono-txt"></div>
+      <div class="fila">
+        <div><label for="s-mant">Recordar mantenimiento a los (días)</label><input id="s-mant" type="number" min="0" max="365" value="${esc(s.mant || 0)}"></div>
+        <div><label>&nbsp;</label><label class="switch" style="margin-top:6px"><input type="checkbox" id="s-consent" ${s.consent ? 'checked' : ''}> Pide consentimiento firmado</label></div>
+      </div>
+      <p class="muted" style="margin:2px 0 0">0 días = no se recuerda. El consentimiento se firma en el celular y vale 1 año.</p>
       <label for="s-desc">Descripción (opcional)</label><input id="s-desc" maxlength="140" value="${esc(s.desc)}" placeholder="Incluye retiro del esmalte anterior">
       <label class="switch"><input type="checkbox" id="s-activo" ${s.activo ? 'checked' : ''}> Activo (aparece en la web)</label>
     </div>
@@ -991,7 +1012,7 @@ function vistaServicioForm(s) {
     const cat = $('#s-cat').value === '__otra' ? $('#s-cat-otra').value : $('#s-cat').value;
     try {
       const r = await api({ a: 'aGuardarServicio', token: S.token, id: nuevo ? '' : s.id, nombre: $('#s-nombre').value, cat: cat, precio: $('#s-precio').value,
-        variable: $('#s-var').checked, abono: $('#s-abono').value.trim() === '' ? '' : ($('#s-abono-modo').value === 'pct' ? numA($('#s-abono').value) + '%' : $('#s-abono').value), dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked,
+        variable: $('#s-var').checked, mant: $('#s-mant').value, consent: $('#s-consent').checked, abono: $('#s-abono').value.trim() === '' ? '' : ($('#s-abono-modo').value === 'pct' ? numA($('#s-abono').value) + '%' : $('#s-abono').value), dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked,
         profesionales: [...document.querySelectorAll('#s-profs input:checked')].map(i => i.value) });
       if (fotoPendiente) { try { await subirFotoServ(r.id, fotoPendiente); } catch (e2) { r.texto += ' La foto no se pudo guardar: ' + e2.message; } }
       cargarServicios(r.texto);

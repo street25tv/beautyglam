@@ -71,6 +71,11 @@
   .btn:disabled { opacity: .5; cursor: default; }
   .btn.sec { background: var(--card2); color: var(--txt); }
   .btn.wa { background: var(--wa); color: #06210f; }
+  .cumple { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+  .cumple select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--txt); font: inherit; }
+  .opc { color: var(--sub); font-weight: 400; font-size: 13px; }
+  .card.consent { border: 2px solid var(--acc); background: rgba(207, 178, 165, .1); }
+  .card.consent p { margin: 6px 0 4px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 12px; }
   .resumen div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
   .resumen div:last-child { border: 0; }
@@ -526,6 +531,9 @@ function vistaReservar() {
         <span><b>Agregar otro servicio</b><small>Súmalo a esta misma visita sin perder lo que ya elegiste</small></span></button></div>` : ''}
       <label for="nombre">Nombre</label><input id="nombre" autocomplete="name" value="${esc(R.nombre != null ? R.nombre : yo.nombre || '')}" placeholder="Tu nombre">
       <label for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="numeric" autocomplete="tel" value="${esc(R.tel != null ? R.tel : yo.tel || '')}" placeholder="300 123 4567">
+      <label for="cu-dia">Tu cumpleaños <span class="opc">(opcional · te enviamos un regalo 🎁)</span></label>
+      <div class="cumple"><select id="cu-dia"><option value="">Día</option>${Array.from({ length: 31 }, (_, i) => `<option ${String(R.cuDia) === String(i + 1) ? 'selected' : ''}>${i + 1}</option>`).join('')}</select>
+        <select id="cu-mes"><option value="">Mes</option>${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'].map((m, i) => `<option value="${i + 1}" ${String(R.cuMes) === String(i + 1) ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
       <div id="err" class="err"></div>
       <button class="btn" id="confirmar">${E.abono ? 'Reservar y ver cómo pagar el abono' : 'Confirmar reserva'}</button>
       <p class="muted">${E.variable ? 'El valor final depende del largo y del estado de tu cabello o uñas. ' : ''}${E.abono ? 'El resto lo pagas en el salón. ' : 'Pagas en el salón. '}${esc(D.advertencia)}</p>`;
@@ -557,6 +565,8 @@ function vistaReservar() {
   if ($('#notas')) $('#notas').oninput = e => { R.notas = e.target.value; };
   if ($('#nombre')) $('#nombre').oninput = e => { R.nombre = e.target.value; };
   if ($('#tel')) $('#tel').oninput = e => { R.tel = e.target.value; };
+  if ($('#cu-dia')) $('#cu-dia').onchange = e => { R.cuDia = e.target.value; };
+  if ($('#cu-mes')) $('#cu-mes').onchange = e => { R.cuMes = e.target.value; };
   if ($('#cambiar')) $('#cambiar').onclick = () => { R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   v.querySelectorAll('[data-b]').forEach(el => {
     const elegir = () => {
@@ -613,7 +623,8 @@ async function confirmar() {
   try {
     const Eres = elegidos(), horaRes = R.hora;
     const multi = R.servicios.length > 1;
-    const r = await api(Object.assign({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim() },
+    const r = await api(Object.assign({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim(),
+      cumpleDia: R.cuDia || '', cumpleMes: R.cuMes || '' },
       multi ? { asig: R.asig } : { profesional: R.profesional }), true);
     // Detalle por servicio: el que manda el servidor (visita) o el calculado aquí (una profesional).
     const segs = r.segmentos || turnosCita(Eres, r.profesional, horaRes).map(x => ({ servicio: x.s.nombre, profesional: r.profesional, hora: deMin(x.ini), fin: deMin(x.fin), precio: x.s.precio, variable: x.s.variable }));
@@ -642,13 +653,16 @@ async function confirmar() {
         ${r.politicaAbono ? `<p class="muted">${esc(r.politicaAbono)}</p>` : ''}
         <p class="muted">Tu cita queda <b>pendiente</b> hasta que el salón reciba el abono.</p>
       </div>` : ''}
+      ${r.consent ? `<div class="card consent"><b>Firma tu consentimiento antes de la cita</b>
+        <p class="muted">Para ${esc(r.consent.faltan.join(', ').toLowerCase())} necesitamos unos datos de salud y tu firma. Toma 2 minutos y así tu cita empieza a tiempo.</p>
+        <a class="btn" href="${esc(r.consent.link)}">Firmar consentimiento</a></div>` : ''}
       ${r.mapa ? `<a class="btn sec" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar (Google Maps)</a>` : ''}
       <p class="muted">${r.abono ? 'Cuando recibamos el abono te confirmamos por WhatsApp.' : 'Te escribiremos por WhatsApp para confirmarla.'} Guarda este enlace para consultar o cancelar tu cita:</p>
       <div class="card" style="word-break:break-all;font-size:13px">${esc(enlace)}</div>
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
     R.notas = '';
-    $('#otra').onclick = () => { R.servicios = []; R.asig = {}; R.plan = null; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
+    $('#otra').onclick = () => { R.servicios = []; R.asig = {}; R.plan = null; R.cuDia = R.cuMes = ''; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Confirmar reserva';
@@ -692,6 +706,7 @@ async function consultar() {
           ${r.abono ? `<div class="fila-abono ${r.abonoPagado >= r.abono ? 'ok' : ''}"><span>${r.abonoPagado >= r.abono ? 'Abono recibido' : 'Abono pendiente'}<small>${r.abonoPagado >= r.abono ? 'Gracias, ya lo registramos' : 'Tu cita se confirma cuando lo recibamos'}</small></span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' ✓' : pesos(r.abono)}</b></div>` : ''}
         </div>
         ${r.abono && r.abonoPagado < r.abono && r.cancelable ? `<p class="muted">${esc(r.datosAbono)}</p>` : ''}
+        ${r.consent ? `<div class="card consent"><b>Falta tu consentimiento (${esc(r.consent.faltan.join(', '))})</b><a class="btn" href="${esc(r.consent.link)}">Firmar ahora</a></div>` : ''}
         ${r.mapa ? `<a class="mapa" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar ↗</a>` : ''}
       </div>
       ${r.membresia ? `<div class="card"><b>${esc(r.membresia.plan)}</b><div class="muted">Te quedan ${r.membresia.restantes} servicios · vence el ${esc(r.membresia.vence)}</div></div>` : ''}

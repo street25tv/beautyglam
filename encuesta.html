@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beauty Glam · ¿Cómo te fue?</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#17110e">
+<link rel="icon" href="image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #17110e; --card: #221915; --card2: #2e231e; --line: #403128; --txt: #f6efea; --sub: #c4b1a6; --acc: #cfb2a5; --acc-txt: #2b170f; --err: #ff6b6b; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt); font: 15px/1.5 Inter, system-ui, sans-serif; }
+  button, textarea { font: inherit; color: inherit; }
+  header { padding: 18px 16px 4px; text-align: center; background: linear-gradient(90deg, #7a5f52, #cfb2a5, #7a5f52) top / 100% 4px no-repeat; }
+  header img { width: min(150px, 40vw); height: auto; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 0 16px 60px; text-align: center; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 32px; margin: 10px 0 4px; }
+  .muted { color: var(--sub); font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 14px; text-align: left; }
+  .estrellas { display: flex; justify-content: center; gap: 6px; margin: 18px 0 6px; }
+  .estrellas button { background: none; border: 0; font-size: 44px; line-height: 1; color: #4a3a31; cursor: pointer; padding: 0 2px; transition: transform .1s; }
+  .estrellas button.on { color: var(--acc); }
+  .estrellas button:active { transform: scale(.9); }
+  .etq { min-height: 1.4em; color: var(--acc); font-weight: 600; }
+  textarea { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card2); resize: vertical; }
+  .btn { display: block; width: 100%; margin-top: 14px; padding: 14px; border: 0; border-radius: 12px; background: var(--acc); color: var(--acc-txt); font-weight: 700; font-size: 16px; cursor: pointer; text-decoration: none; text-align: center; }
+  .btn.google { background: #fff; color: #1f1f1f; }
+  .btn:disabled { opacity: .5; }
+  .err { color: var(--err); margin-top: 10px; min-height: 1em; }
+</style>
+</head>
+<body>
+<header><img src="logo.png" alt="Beauty Glam by Nathaly Torres" width="520" height="520"></header>
+<div class="wrap" id="app"><p class="muted" style="margin-top:30px">Cargando…</p></div>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxdYsJMpAHYGTf5ObuPCoIRMS4yYKSpGW1SMGNja7iLVml2JO9O4btmWzf46nWLR7EdDA/exec';
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const qs = new URLSearchParams(location.search);
+const CITA = qs.get('cita') || '', TEL = qs.get('t') || '';
+const ETQ = ['', 'Muy mal', 'Mal', 'Regular', 'Bien', '¡Excelente!'];
+
+async function api(params, post) {
+  for (let i = 0; i < 4; i++) {
+    try {
+      const r = post ? await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(params) })
+        : await fetch(API + '?' + new URLSearchParams(params));
+      const j = await r.json();
+      if (!j.ok) { const e = new Error(j.error || 'Error'); e.final = true; throw e; }
+      return j;
+    } catch (e) { if (e.final) throw e; await new Promise(res => setTimeout(res, 800 * (i + 1))); }
+  }
+  throw new Error('No pudimos conectar. Revisa tu internet.');
+}
+
+function gracias(r, d) {
+  $('#app').innerHTML = `<h1>¡Gracias, ${esc(d.cliente)}!</h1><p class="muted">${esc(r.texto)}</p>
+    ${r.resena ? `<div class="card"><b>¿Nos ayudas con una reseña en Google?</b><p class="muted">Tu opinión ayuda a otras clientas a encontrarnos. Toma 30 segundos.</p>
+      <a class="btn google" id="resena" href="${esc(r.resena)}" target="_blank" rel="noopener">★ Dejar reseña en Google</a></div>` : ''}
+    <a class="btn" href="./" style="background:var(--card2);color:var(--txt)">Reservar mi próxima cita</a>`;
+  if ($('#resena')) $('#resena').onclick = () => { api({ a: 'encuestaResena', cita: CITA, t: TEL }).catch(() => {}); };
+}
+
+async function iniciar() {
+  if (!CITA || !TEL) { $('#app').innerHTML = '<h1>¿Cómo te fue?</h1><p class="muted">Abre esta encuesta desde el enlace de tu factura.</p>'; return; }
+  let d;
+  try { d = await api({ a: 'encuesta', cita: CITA, t: TEL }); }
+  catch (e) { $('#app').innerHTML = `<h1>¿Cómo te fue?</h1><div class="err">${esc(e.message)}</div>`; return; }
+  let p = d.puntaje || 0;
+  $('#app').innerHTML = `
+    <h1>¿Cómo te fue, ${esc(d.cliente)}?</h1>
+    <p class="muted">${esc(d.servicio)} con ${esc(d.profesional)}</p>
+    <div class="estrellas" role="radiogroup" aria-label="Calificación">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" aria-label="${n} estrellas">★</button>`).join('')}</div>
+    <div class="etq" id="etq"></div>
+    <div class="card"><label for="com" class="muted">Cuéntanos más (opcional)</label>
+      <textarea id="com" rows="3" maxlength="500" placeholder="¿Qué te gustó? ¿Qué mejorarías?"></textarea></div>
+    <div class="err" id="err"></div>
+    <button class="btn" id="enviar">Enviar</button>`;
+  const pintar = () => { document.querySelectorAll('[data-n]').forEach(b => b.classList.toggle('on', Number(b.dataset.n) <= p)); $('#etq').textContent = ETQ[p]; };
+  document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { p = Number(b.dataset.n); pintar(); });
+  pintar();
+  $('#enviar').onclick = async () => {
+    if (!p) { $('#err').textContent = 'Toca las estrellas para calificar.'; return; }
+    const b = $('#enviar'); b.disabled = true; b.textContent = 'Enviando…';
+    try { gracias(await api({ a: 'encuestaGuardar', cita: CITA, t: TEL, puntaje: p, comentario: $('#com').value }, true), d); }
+    catch (e) { b.disabled = false; b.textContent = 'Enviar'; $('#err').textContent = e.message; }
+  };
+}
+iniciar();
+</script>
+</body>
+</html>
