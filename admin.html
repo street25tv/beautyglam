@@ -909,6 +909,7 @@ function vistaServicios(msg) {
 function vistaServicioForm(s) {
   const nuevo = !s;
   s = s || { nombre: '', cat: SV.categorias[0] || 'Cabello', precio: '', variable: false, abono: 0, dur: 30, desc: '', activo: true };
+  const AD = SV.abonoDef || { pct: 50, desde: 40000 };
   const cats = SV.categorias.indexOf(s.cat) >= 0 ? SV.categorias : SV.categorias.concat(s.cat);
   $('#app').innerHTML = `
     <div class="top"><button class="link" id="volver">← Volver</button><button class="link" id="salir">Salir</button></div>
@@ -923,7 +924,10 @@ function vistaServicioForm(s) {
         <div><label for="s-dur">Duración (min)</label><input id="s-dur" type="number" min="5" max="480" step="5" value="${esc(s.dur)}"></div>
       </div>
       <label class="switch"><input type="checkbox" id="s-var" ${s.variable ? 'checked' : ''}> Precio variable: la web muestra "desde" y el valor final se ajusta al facturar</label>
-      <label for="s-abono">Abono para reservar (0 = sin abono)</label><input id="s-abono" inputmode="numeric" value="${esc(s.abono || 0)}" placeholder="0">
+      <label for="s-abono">Abono para reservar</label>
+      <div class="fila"><div><input id="s-abono" inputmode="numeric" value="${esc(nuevo ? '' : s.abono || 0)}" placeholder="${esc(AD.pct)}"></div>
+        <div><select id="s-abono-modo"><option value="pct" ${nuevo ? 'selected' : ''}>% del precio</option><option value="val" ${nuevo ? '' : 'selected'}>Valor en $</option></select></div></div>
+      <div class="muted" id="s-abono-txt"></div>
       <label for="s-desc">Descripción (opcional)</label><input id="s-desc" maxlength="140" value="${esc(s.desc)}" placeholder="Incluye retiro del esmalte anterior">
       <label class="switch"><input type="checkbox" id="s-activo" ${s.activo ? 'checked' : ''}> Activo (aparece en la web)</label>
     </div>
@@ -946,6 +950,24 @@ function vistaServicioForm(s) {
   $('#volver').onclick = () => vistaServicios();
   $('#salir').onclick = () => salir();
   $('#s-cat').onchange = () => { $('#s-cat-otra').hidden = $('#s-cat').value !== '__otra'; };
+  // Abono: en % o en $. Vacío en un servicio nuevo = regla por defecto (AD.pct % si el precio pasa de AD.desde).
+  const numA = v => Number(String(v || '').replace(/[^\d.]/g, '')) || 0;
+  const abonoCalc = () => {
+    const precio = numA($('#s-precio').value), v = $('#s-abono').value.trim(), pct = $('#s-abono-modo').value === 'pct';
+    if (v === '') return precio > AD.desde ? Math.round(precio * AD.pct / 100 / 100) * 100 : 0;
+    return pct ? Math.round(precio * numA(v) / 100 / 100) * 100 : Math.round(numA(v));
+  };
+  const abonoTxt = () => {
+    const a = abonoCalc(), vacio = $('#s-abono').value.trim() === '';
+    $('#s-abono-txt').textContent = (a ? 'La clienta deja ' + pesosC(a) + ' de abono para reservar.' : 'Sin abono.') +
+      (vacio ? ' (Por defecto: ' + AD.pct + '% si el precio pasa de ' + pesosC(AD.desde) + ')' : '');
+  };
+  $('#s-abono-modo').onchange = () => {
+    const precio = numA($('#s-precio').value), v = $('#s-abono').value.trim();
+    if (v !== '' && precio) $('#s-abono').value = $('#s-abono-modo').value === 'pct' ? Math.round(numA(v) * 100 / precio) : Math.round(precio * numA(v) / 100 / 100) * 100;
+    abonoTxt();
+  };
+  $('#s-abono').oninput = abonoTxt; $('#s-precio').addEventListener('input', abonoTxt); abonoTxt();
   let fotoPendiente = '';
   const msgFoto = (t, err) => { $('#s-foto-msg').className = err ? 'err' : 'muted'; $('#s-foto-msg').textContent = t; };
   $('#s-foto-file').onchange = async e => {
@@ -969,7 +991,7 @@ function vistaServicioForm(s) {
     const cat = $('#s-cat').value === '__otra' ? $('#s-cat-otra').value : $('#s-cat').value;
     try {
       const r = await api({ a: 'aGuardarServicio', token: S.token, id: nuevo ? '' : s.id, nombre: $('#s-nombre').value, cat: cat, precio: $('#s-precio').value,
-        variable: $('#s-var').checked, abono: $('#s-abono').value, dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked,
+        variable: $('#s-var').checked, abono: $('#s-abono').value.trim() === '' ? '' : ($('#s-abono-modo').value === 'pct' ? numA($('#s-abono').value) + '%' : $('#s-abono').value), dur: $('#s-dur').value, desc: $('#s-desc').value, activo: $('#s-activo').checked,
         profesionales: [...document.querySelectorAll('#s-profs input:checked')].map(i => i.value) });
       if (fotoPendiente) { try { await subirFotoServ(r.id, fotoPendiente); } catch (e2) { r.texto += ' La foto no se pudo guardar: ' + e2.message; } }
       cargarServicios(r.texto);
