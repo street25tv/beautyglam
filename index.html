@@ -105,7 +105,15 @@
   .asig .pros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .pro { border: 1px solid var(--line); background: transparent; color: var(--txt); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 14px; cursor: pointer; }
   .pro.on { border-color: var(--acc); background: var(--acc); color: #1b1310; font-weight: 600; }
-  .acc-serv { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+  .acc-serv { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .btn-agregar { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: 2px dashed var(--acc); border-radius: 14px;
+    background: rgba(207, 178, 165, .08); color: var(--txt); font: inherit; text-align: left; cursor: pointer; }
+  .btn-agregar:hover, .btn-agregar:focus-visible { background: rgba(207, 178, 165, .16); }
+  .btn-agregar .mas { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--acc); color: var(--acc-txt);
+    display: grid; place-items: center; font-size: 28px; font-weight: 700; line-height: 1; }
+  .btn-agregar b { display: block; font-size: 16px; }
+  .btn-agregar small { color: var(--sub); font-size: 13px; }
+  .acc-serv .link { align-self: flex-start; }
   .opt.elegido { cursor: default; }
   .link { background: none; border: 0; color: var(--acc); cursor: pointer; padding: 10px 0 0; font-weight: 600; font-size: 14px; }
   .hidden { display: none !important; }
@@ -419,7 +427,9 @@ function vistaReservar() {
       <span class="mini">${imgFoto(s.id, s.cat, s.nombre, true)}<span class="check" aria-hidden="true">✓</span></span>
       <span class="opt-txt"><b>${esc(s.nombre)}</b>${s.desc ? `<span class="desc">${esc(s.desc)}</span>` : ''}</span>
       <span class="meta">${precioTxt(s.precio, s.variable)}<br>${dur(s.dur)}</span></div>`).join('') + '</div>';
-    html += `<div class="acc-serv"><button class="link" id="cambiar-serv">← Cambiar servicio</button>${E.l.length < 6 ? '<button class="link" id="agregar-serv">+ Agregar otro servicio</button>' : ''}</div>`;
+    html += `<div class="acc-serv">${E.l.length < 6 ? `<button class="btn-agregar" id="agregar-serv"><span class="mas" aria-hidden="true">+</span>
+      <span><b>Agregar otro servicio</b><small>${E.l.length === 1 ? '¿También uñas, pies, cejas…? Súmalo a la misma visita' : 'Puedes sumar hasta 6 servicios en la misma visita'}</small></span></button>` : ''}
+      <button class="link" id="cambiar-serv">← ${E.l.length > 1 ? 'Empezar de nuevo' : 'Cambiar servicio'}</button></div>`;
   }
   if (E.l.length && !R.agregando) {
     html += `<div class="card total">
