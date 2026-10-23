@@ -392,13 +392,18 @@ function vistaReservar() {
   const aptas = R.servicios.length && !multi ? capaces() : [];
   if (multi) {
     Object.keys(R.asig).forEach(id => { if (R.servicios.indexOf(id) < 0) delete R.asig[id]; });
+    // La profesional que la clienta ya eligió se mantiene para los servicios que agregue (si los hace).
+    const conHora = R.horaCon ? (D.profesionales.find(b => b.nombre === R.horaCon) || {}).id : '';
+    const elegidas = R.servicios.map(id => R.asig[id]).filter(x => x && x !== '*');
+    const pref = elegidas.length ? elegidas[elegidas.length - 1] : (R.profesional && R.profesional !== '*' ? R.profesional : conHora || '');
     R.servicios.forEach(id => {
       const ok = D.profesionales.filter(b => (b.servicios || []).indexOf(id) >= 0);
-      if (!R.asig[id] || (R.asig[id] !== '*' && !ok.some(b => b.id === R.asig[id]))) R.asig[id] = ok.length === 1 ? ok[0].id : '*';
+      if (!R.asig[id] || (R.asig[id] !== '*' && !ok.some(b => b.id === R.asig[id])))
+        R.asig[id] = pref && ok.some(b => b.id === pref) ? pref : ok.length === 1 ? ok[0].id : '*';
     });
   }
-  if (R.profesional && R.profesional !== '*' && !aptas.some(b => b.id === R.profesional)) { R.profesional = null; R.fecha = null; R.hora = null; }
-  if (R.profesional === '*' && aptas.length < 2) R.profesional = aptas.length === 1 ? aptas[0].id : null;
+  if (!multi && R.profesional && R.profesional !== '*' && !aptas.some(b => b.id === R.profesional)) { R.profesional = null; R.fecha = null; R.hora = null; }
+  if (!multi && R.profesional === '*' && aptas.length < 2) R.profesional = aptas.length === 1 ? aptas[0].id : null;
   const barb = D.profesionales.find(b => b.id === R.profesional);
 
   // 1 · Servicios por categoría
@@ -527,7 +532,7 @@ function vistaReservar() {
     setTimeout(() => { const p = $('#paso1'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   });
   v.querySelectorAll('[data-asig]').forEach(b => b.onclick = () => { R.asig[b.dataset.asig] = b.dataset.pro; R.hora = null; R.plan = null; vistaReservar(); });
-  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.servicios = []; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.servicios = []; R.asig = {}; R.plan = null; R.horaCon = ''; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   // "Agregar otro servicio" arriba (paso 1) y al final (paso 5): guarda lo escrito y abre la lista.
   v.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => {
     if ($('#nombre')) R.nombre = $('#nombre').value;
