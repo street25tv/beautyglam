@@ -59,6 +59,29 @@
   .chip b { font-size: 18px; }
   .chip.on { border-color: var(--acc); background: #33251f; }
   .chip:disabled { opacity: .35; cursor: default; }
+  /* Días con cupo: verde iluminado */
+  .dias .chip { position: relative; transition: transform .15s, box-shadow .2s, background .2s, border-color .2s; }
+  .dias .chip .cupo { display: block; margin-top: 2px; font-size: 10px; font-weight: 600; letter-spacing: .2px; text-transform: none; color: var(--sub); }
+  .dias .chip.libre { border-color: rgba(47, 191, 113, .75); background: linear-gradient(160deg, rgba(47, 191, 113, .22), rgba(47, 191, 113, .06));
+    box-shadow: 0 0 0 1px rgba(47, 191, 113, .15), 0 6px 18px -6px rgba(47, 191, 113, .55); }
+  .dias .chip.libre b { color: #eafff2; }
+  .dias .chip.libre .cupo { color: #6fe3a3; }
+  .dias .chip.libre::after { content: ''; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+    box-shadow: 0 0 0 0 rgba(47, 191, 113, .7); animation: latido 2s infinite; }
+  .dias .chip.libre:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(47, 191, 113, .3), 0 10px 22px -6px rgba(47, 191, 113, .7); }
+  .dias .chip.libre.on { background: linear-gradient(160deg, #34d17d, #1f9e5a); border-color: #34d17d; }
+  .dias .chip.libre.on b, .dias .chip.libre.on small, .dias .chip.libre.on .cupo { color: #04210f; }
+  .dias .chip.libre.on::after { background: #04210f; animation: none; }
+  .dias .chip.lleno { opacity: .5; }
+  .dias .chip.lleno .cupo { color: #a08c82; }
+  .dias .chip.cargando { background: linear-gradient(100deg, var(--card) 30%, #33261f 50%, var(--card) 70%); background-size: 300% 100%; animation: brillo 1.4s infinite linear; }
+  @keyframes latido { 0% { box-shadow: 0 0 0 0 rgba(47, 191, 113, .7); } 70% { box-shadow: 0 0 0 7px rgba(47, 191, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(47, 191, 113, 0); } }
+  @keyframes brillo { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+  @media (prefers-reduced-motion: reduce) { .dias .chip.libre::after, .dias .chip.cargando { animation: none; } }
+  .leyenda { display: flex; gap: 14px; margin: -2px 0 10px; font-size: 12px; color: var(--sub); }
+  .leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+  .leyenda .v { background: var(--ok); box-shadow: 0 0 8px rgba(47, 191, 113, .8); }
+  .leyenda .g { background: #5b4a41; }
   .horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
   .horas .chip { min-width: 0; padding: 10px 4px; font-weight: 600; }
 
@@ -510,13 +533,14 @@ function vistaReservar() {
 
   const listo = E.l.length && !R.agregando && (multi ? multiOk : R.profesional && aptas.length);
   if (listo) {
-    html += '<h2>3 · Día</h2><div class="chips">';
+    html += '<h2>3 · Día</h2><div class="leyenda"><span><i class="v"></i>Con cupo</span><span><i class="g"></i>Sin cupo</span></div><div class="chips dias">';
     const hoy = deISO(D.hoy);
+    const mapa = mapaDias();
     for (let i = 0; i <= D.dias; i++) {
       const d = new Date(hoy); d.setDate(d.getDate() + i);
       const iso = fechaISO(d);
       const off = cerrado(D.horario[d.getDay()]);
-      html += `<button class="chip ${iso === R.fecha ? 'on' : ''}" data-f="${iso}" ${off ? 'disabled' : ''}><small>${i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MESES[d.getMonth()]}</small></button>`;
+      html += `<button class="chip ${iso === R.fecha ? 'on' : ''} ${off ? '' : claseDia(mapa, iso)}" data-f="${iso}" ${off ? 'disabled' : ''}><small>${i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MESES[d.getMonth()]}</small>${off ? '' : cupoTxt(mapa, iso)}</button>`;
     }
     html += '</div>';
   }
@@ -589,6 +613,7 @@ function vistaReservar() {
     el.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('[data-mapa]')) { e.preventDefault(); elegir(); } };
   });
   v.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { R.fecha = b.dataset.f; R.hora = null; vistaReservar(); });
+  if (listo && !mapaDias()) cargarDias();
   if (listo && R.fecha) cargarHoras();
   if ($('#confirmar')) $('#confirmar').onclick = confirmar;
 }
@@ -597,6 +622,34 @@ function fechaLarga(iso) {
   const d = deISO(iso);
   const n = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()];
   return n + ' ' + d.getDate() + ' de ' + ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][d.getMonth()];
+}
+
+/* Días con cupo (verde) para los servicios y profesionales elegidos. Se guarda 1 minuto. */
+let DISP = { clave: '', mapa: null, t: 0 }, pedidoDias = 0;
+function claveDias() { return R.servicios.length > 1 ? R.servicios.join(',') + '|' + JSON.stringify(R.asig) : R.servicios.join(',') + '|' + R.profesional; }
+function mapaDias() { return DISP.clave === claveDias() && Date.now() - DISP.t < 60000 ? DISP.mapa : null; }
+function claseDia(m, iso) { return !m ? 'cargando' : m[iso] > 0 ? 'libre' : 'lleno'; }
+function cupoTxt(m, iso) { return !m ? '<span class="cupo">&nbsp;</span>' : m[iso] > 0 ? `<span class="cupo">${m[iso] === 1 ? '1 cupo' : m[iso] + ' cupos'}</span>` : '<span class="cupo">Sin cupo</span>'; }
+async function cargarDias() {
+  const clave = claveDias(), n = ++pedidoDias;
+  const multi = R.servicios.length > 1;
+  try {
+    const r = await api(multi ? { a: 'dias', servicio: R.servicios.join(','), asig: JSON.stringify(R.asig) }
+      : { a: 'dias', profesional: R.profesional, servicio: R.servicios.join(',') });
+    if (n !== pedidoDias || clave !== claveDias()) return;
+    DISP = { clave: clave, mapa: r.dias, t: Date.now() };
+  } catch (e) {
+    if (n !== pedidoDias) return;
+    document.querySelectorAll('.dias .chip.cargando').forEach(b => b.classList.remove('cargando'));
+    return;
+  }
+  // Pinta solo los días (no se redibuja el formulario).
+  document.querySelectorAll('.dias [data-f]').forEach(b => {
+    if (b.disabled) return;
+    b.classList.remove('cargando', 'libre', 'lleno');
+    b.classList.add(claseDia(DISP.mapa, b.dataset.f));
+    const c = b.querySelector('.cupo'); if (c) c.outerHTML = cupoTxt(DISP.mapa, b.dataset.f);
+  });
 }
 
 let pedidoHoras = 0;
@@ -714,7 +767,7 @@ async function confirmar() {
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
     R.notas = '';
-    $('#otra').onclick = () => { R.servicios = []; R.asig = {}; R.plan = null; R.cuDia = R.cuMes = ''; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
+    $('#otra').onclick = () => { DISP.t = 0; R.servicios = []; R.asig = {}; R.plan = null; R.cuDia = R.cuMes = ''; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Confirmar reserva';
