@@ -127,15 +127,27 @@
   .opt .meta { text-align: right; line-height: 1.35; }
   .check { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 7px; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--acc-txt); }
   .opt.on .check { background: var(--acc); border-color: var(--acc); }
-  .badge { align-self: flex-start; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--acc); border: 1px solid #7a5f52; border-radius: 999px; padding: 2px 8px; }
+  .badge { align-self: flex-start; margin-top: 4px; font-size: 11px; font-weight: 700; color: var(--acc-txt); background: var(--acc); border-radius: 999px; padding: 2px 9px; }
   .total { border-color: #7a5f52; }
   .lista-elegidos { display: flex; flex-wrap: wrap; gap: 6px; }
   .lista-elegidos .tag { background: var(--card2); border-radius: 999px; padding: 4px 4px 4px 11px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
   .lista-elegidos .tag button { border: 0; background: transparent; color: var(--sub); font-size: 17px; line-height: 1; cursor: pointer; padding: 0 6px; }
   .suma { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 10px 0 4px; }
   .suma b { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; color: var(--acc); }
-  .abono { border-color: #7a5f52; background: #261b17; }
+  .abono { border: 2px solid var(--acc); background: linear-gradient(135deg, rgba(207, 178, 165, .16), rgba(207, 178, 165, .05)); }
   .abono p { margin: 8px 0 0; }
+  .abono .monto { display: block; font-family: Lora, Georgia, serif; font-size: 30px; color: var(--acc); margin: 2px 0 4px; }
+  /* Abono resaltado con la paleta (rosa nude sobre fondo cacao) */
+  .resumen .fila-abono { background: var(--acc); color: var(--acc-txt); border: 0; border-radius: 12px; padding: 10px 12px; margin: 8px 0 4px; align-items: center; }
+  .resumen .fila-abono span { color: var(--acc-txt); display: flex; flex-direction: column; font-weight: 600; }
+  .resumen .fila-abono small { font-weight: 400; font-size: 12px; opacity: .85; }
+  .resumen .fila-abono b { font-size: 20px; color: var(--acc-txt); }
+  .resumen .fila-abono.ok { background: #2f4a37; }
+  .resumen .fila-abono.ok span, .resumen .fila-abono.ok b { color: #e6f4ea; }
+  .nota-abono { display: flex; gap: 10px; align-items: center; margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--acc);
+    background: rgba(207, 178, 165, .12); color: var(--txt); font-size: 14px; }
+  .nota-abono::before { content: '◆'; color: var(--acc); font-size: 14px; }
+  .nota-abono b { color: var(--acc); }
   .portada { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 12 / 5; margin: 0 0 10px; background: var(--card); border: 1px solid var(--line); }
   .portada img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .portada::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(23,17,14,0) 45%, rgba(23,17,14,.85)); }
@@ -441,7 +453,7 @@ function vistaReservar() {
     html += `<div class="card total">
       ${E.l.length < 2 ? '' : `<div class="lista-elegidos">${E.l.map(s => `<span class="tag">${esc(s.nombre)} <button data-quitar="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">×</button></span>`).join('')}</div>`}
       <div class="suma"><span>${E.l.length} ${E.l.length === 1 ? 'servicio' : 'servicios'} · ${dur(E.dur)}</span><b>${precioTxt(E.precio, E.variable)}</b></div>
-      ${E.abono ? `<div class="muted">Para confirmar esta cita se pide un abono de <b>${pesos(E.abono)}</b>, que se descuenta del total.</div>` : ''}
+      ${E.abono ? `<div class="nota-abono"><span>Para confirmar esta cita se pide un abono de <b>${pesos(E.abono)}</b>, que se descuenta del total.</span></div>` : ''}
       <label for="notas">Notas para tu cita (opcional)</label>
       <textarea id="notas" maxlength="300" rows="3" placeholder="Ej.: tengo el cabello largo, quiero un tono más claro, soy alérgica a…">${esc(R.notas || '')}</textarea>
     </div>`;
@@ -507,7 +519,7 @@ function vistaReservar() {
         <div><span>Cuándo</span><b>${esc(segs ? cuandoSeg(fechaLarga(R.fecha), segs) : cuandoTxt(fechaLarga(R.fecha), E, quien, R.hora))}</b></div>
         <div><span>Duración${E.l.length > 1 ? ' total' : ''}</span><b>${dur(durTot)}</b></div>
         <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
-        ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
+        ${E.abono ? `<div class="fila-abono"><span>Abono para confirmar<small>Se descuenta del total · el resto lo pagas en el salón</small></span><b>${pesos(E.abono)}</b></div>` : ''}
         ${(R.notas || '').trim() ? `<div><span>Tus notas</span><b>${esc(R.notas.trim())}</b></div>` : ''}
       </div>
       ${E.l.length < 6 ? `<div class="acc-serv final"><button class="btn-agregar" data-agregar><span class="mas" aria-hidden="true">+</span>
@@ -625,7 +637,7 @@ async function confirmar() {
         </div>
       </div>
       ${r.abono ? `<div class="card abono">
-        <b>Paga el abono de ${pesos(r.abono)} para confirmar</b>
+        <b>Paga el abono para confirmar tu cita</b><span class="monto">${pesos(r.abono)}</span>
         <p>${esc(r.datosAbono || 'Escríbenos por WhatsApp y te enviamos los datos para el abono.')}</p>
         ${r.politicaAbono ? `<p class="muted">${esc(r.politicaAbono)}</p>` : ''}
         <p class="muted">Tu cita queda <b>pendiente</b> hasta que el salón reciba el abono.</p>
@@ -677,7 +689,7 @@ async function consultar() {
           <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
           <div><span>Cuándo</span><b>${esc(r.segmentos && r.segmentos.length ? cuandoSeg(r.fechaTxt, r.segmentos) : r.fechaTxt + ', ' + r.hora12 + (r.fin ? ' – ' + hora12(r.fin) : ''))}</b></div>
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
-          ${r.abono ? `<div><span>Abono</span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' recibido ✓' : pesos(r.abono) + ' pendiente'}</b></div>` : ''}
+          ${r.abono ? `<div class="fila-abono ${r.abonoPagado >= r.abono ? 'ok' : ''}"><span>${r.abonoPagado >= r.abono ? 'Abono recibido' : 'Abono pendiente'}<small>${r.abonoPagado >= r.abono ? 'Gracias, ya lo registramos' : 'Tu cita se confirma cuando lo recibamos'}</small></span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' ✓' : pesos(r.abono)}</b></div>` : ''}
         </div>
         ${r.abono && r.abonoPagado < r.abono && r.cancelable ? `<p class="muted">${esc(r.datosAbono)}</p>` : ''}
         ${r.mapa ? `<a class="mapa" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar ↗</a>` : ''}
