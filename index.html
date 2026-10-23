@@ -114,7 +114,7 @@
   .btn-agregar b { display: block; font-size: 16px; }
   .btn-agregar small { color: var(--sub); font-size: 13px; }
   .acc-serv .link { align-self: flex-start; }
-  .acc-serv.final { margin-top: 18px; }
+  .acc-serv.final { margin: 14px 0 6px; }
   .opt.elegido { cursor: default; }
   .link { background: none; border: 0; color: var(--acc); cursor: pointer; padding: 10px 0 0; font-weight: 600; font-size: 14px; }
   .hidden { display: none !important; }
@@ -505,13 +505,13 @@ function vistaReservar() {
         ${E.abono ? `<div><span>Abono para confirmar</span><b>${pesos(E.abono)}</b></div>` : ''}
         ${(R.notas || '').trim() ? `<div><span>Tus notas</span><b>${esc(R.notas.trim())}</b></div>` : ''}
       </div>
+      ${E.l.length < 6 ? `<div class="acc-serv final"><button class="btn-agregar" data-agregar><span class="mas" aria-hidden="true">+</span>
+        <span><b>Agregar otro servicio</b><small>Súmalo a esta misma visita sin perder lo que ya elegiste</small></span></button></div>` : ''}
       <label for="nombre">Nombre</label><input id="nombre" autocomplete="name" value="${esc(R.nombre != null ? R.nombre : yo.nombre || '')}" placeholder="Tu nombre">
       <label for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="numeric" autocomplete="tel" value="${esc(R.tel != null ? R.tel : yo.tel || '')}" placeholder="300 123 4567">
       <div id="err" class="err"></div>
       <button class="btn" id="confirmar">${E.abono ? 'Reservar y ver cómo pagar el abono' : 'Confirmar reserva'}</button>
-      <p class="muted">${E.variable ? 'El valor final depende del largo y del estado de tu cabello o uñas. ' : ''}${E.abono ? 'El resto lo pagas en el salón. ' : 'Pagas en el salón. '}${esc(D.advertencia)}</p>
-      ${E.l.length < 6 ? `<div class="acc-serv final"><button class="btn-agregar" data-agregar><span class="mas" aria-hidden="true">+</span>
-        <span><b>Agregar otro servicio</b><small>Súmalo a esta misma visita sin perder lo que ya elegiste</small></span></button></div>` : ''}`;
+      <p class="muted">${E.variable ? 'El valor final depende del largo y del estado de tu cabello o uñas. ' : ''}${E.abono ? 'El resto lo pagas en el salón. ' : 'Pagas en el salón. '}${esc(D.advertencia)}</p>`;
   }
   const pistaPrev = $('#pista'), posPrev = pistaPrev ? pistaPrev.scrollLeft : 0;
   v.innerHTML = html;
