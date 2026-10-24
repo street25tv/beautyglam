@@ -43,7 +43,7 @@ let CL = { sub: 'fichas', q: '' };
 })();
 
 function subNavClientas() {
-  const s = [['fichas', 'Fichas'], ['fidel', 'Fidelización'], ['campanas', 'Campañas'], ['tarjetas', 'Tarjetas regalo']];
+  const s = [['fichas', 'Fichas'], ['fidel', 'Fidelización'], ['campanas', 'Campañas'], ['tarjetas', 'Tarjetas regalo'], ['mensajes', 'Mensajes']];
   return `<div class="chips">${s.map(x => `<button class="chip ${CL.sub === x[0] ? 'on' : ''}" data-sub="${x[0]}">${x[1]}</button>`).join('')}</div>`;
 }
 function bindSubClientas() {
@@ -52,12 +52,15 @@ function bindSubClientas() {
 
 async function cargarClientas(msg) {
   if (CL.sub === 'campanas' && typeof vistaCampanas === 'function') return vistaCampanas(msg);
+  if (CL.sub === 'mensajes' && typeof vistaMensajes === 'function') return vistaMensajes(msg);
   if (CL.sub === 'fidel' || CL.sub === 'tarjetas') return cargarFidelizacion(msg);
   $('#app').innerHTML = nav('clientas') + subNavClientas() + `
     ${msg ? `<div class="okmsg">${esc(msg)}</div>` : ''}
-    <div class="card"><label for="cl-q" style="margin-top:0">Buscar por nombre o WhatsApp</label><input id="cl-q" value="${esc(CL.q)}" placeholder="Ana, 300…" autocomplete="off"></div>
+    <div class="card"><label for="cl-q" style="margin-top:0">Buscar por nombre o WhatsApp</label><input id="cl-q" value="${esc(CL.q)}" placeholder="Ana, 300…" autocomplete="off">
+      ${typeof vistaImportar === 'function' ? '<button class="link" id="cl-importar" style="margin-top:8px">⇪ Importar clientas desde Excel o el celular</button>' : ''}</div>
     <div class="card" id="cl-lista"><p class="muted">Cargando…</p></div>`;
   bindNav(); bindSubClientas();
+  if ($('#cl-importar')) $('#cl-importar').onclick = vistaImportar;
   let t = null;
   $('#cl-q').oninput = () => { clearTimeout(t); t = setTimeout(() => { CL.q = $('#cl-q').value.trim(); listarClientas(); }, 350); };
   listarClientas();

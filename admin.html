@@ -139,6 +139,7 @@
 
 <script src="clientas.js"></script>
 <script src="gestion.js"></script>
+<script src="inicio.js"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 <script>
 /* Misma API de la web de reservas. */
@@ -192,7 +193,7 @@ function vistaLogin(msg) {
       const r = await api({ a: 'aLogin', clave: $('#clave').value });
       S = { token: r.token, hasta: Date.now() + 5.5 * 3600 * 1000 };
       ls.set('sesionAdmin', S);
-      cargarAgenda();
+      typeof cargarInicio === 'function' ? cargarInicio() : cargarAgenda();
     } catch (e) { b.disabled = false; $('#err').textContent = e.message; }
   };
   $('#entrar').onclick = entrar;
@@ -263,6 +264,7 @@ function vistaLista(msg) {
 /* ---------- Pestañas ---------- */
 function nav(activa) {
   return `<div class="top"><div class="tabs">
+      <button class="tab ${activa === 'inicio' ? 'on' : ''}" data-nav="inicio">Inicio</button>
       <button class="tab ${activa === 'agenda' ? 'on' : ''}" data-nav="agenda">Agenda</button>
       <button class="tab ${activa === 'facturar' ? 'on' : ''}" data-nav="facturar">Facturar</button>
       <button class="tab ${activa === 'productos' ? 'on' : ''}" data-nav="productos">Productos</button>
@@ -273,7 +275,7 @@ function nav(activa) {
     </div><button class="link" id="salir">Salir</button></div>`;
 }
 function bindNav() {
-  const ir = { agenda: cargarAgenda, facturar: cargarFacturacion, productos: cargarProductos, finanzas: cargarFinanzas, servicios: cargarServicios, profesionales: cargar,
+  const ir = { inicio: () => (typeof cargarInicio === 'function' ? cargarInicio() : cargarAgenda()), agenda: cargarAgenda, facturar: cargarFacturacion, productos: cargarProductos, finanzas: cargarFinanzas, servicios: cargarServicios, profesionales: cargar,
     clientas: () => (typeof cargarClientas === 'function' ? cargarClientas() : cargarAgenda()) };
   document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => (ir[b.dataset.nav] || cargarAgenda)());
   if ($('#salir')) $('#salir').onclick = () => salir();
@@ -1404,7 +1406,7 @@ function vistaCreado(r) {
   $('#lista').onclick = () => cargar();
 }
 
-if (S && S.token && S.hasta > Date.now()) cargarAgenda(); else vistaLogin();
+if (S && S.token && S.hasta > Date.now()) (typeof cargarInicio === 'function' ? cargarInicio() : cargarAgenda()); else vistaLogin();
 </script>
 </body>
 </html>
