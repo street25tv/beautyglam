@@ -665,9 +665,9 @@ function vistaFacturacion(msg, wa) {
     </div>
     <button class="btn" id="mostrador">+ Venta de productos sin cita</button>
     <div class="card ${d.porFacturar.length ? 'pend-card' : ''}"><b>Por facturar (${d.porFacturar.length})</b>
-      <div class="muted">El profesional tocó "Finalizado": cobra el servicio, los productos y la propina.</div>
+      <div class="muted">Servicios marcados como terminados: cobra el servicio, los productos y la propina.</div>
       ${d.porFacturar.map(filaPorFacturar).join('') || '<p class="muted" style="margin:10px 0 0">No hay servicios esperando pago.</p>'}</div>
-    ${d.enCurso.length ? `<div class="card"><b>En curso hoy (${d.enCurso.length})</b><div class="muted">Aún no los finalizan. Puedes facturarlos si el profesional se olvidó de tocar "Finalizado".</div>${d.enCurso.map(filaPorFacturar).join('')}</div>` : ''}
+    ${d.enCurso.length ? `<div class="card"><b>En curso hoy (${d.enCurso.length})</b><div class="muted">Factúralos apenas terminen: así la profesional queda libre en la agenda desde ese momento.</div>${d.enCurso.map(filaPorFacturar).join('')}</div>` : ''}
     <div class="card"><b>Facturas de hoy</b>${d.facturas.length ? d.facturas.map(f => `<div class="cita">
       <div class="cita-top"><b>${esc(f.id)} · ${esc(h12(f.hora))}</b><b>${pesosC(f.total)}</b></div>
       <div class="muted">${esc(f.cliente)}${f.profesional ? ' · ' + esc(f.profesional) : ''} · ${esc(f.medio)}</div>
