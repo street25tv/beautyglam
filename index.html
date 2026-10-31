@@ -140,6 +140,13 @@
   .puntos span { width: 7px; height: 7px; border-radius: 50%; background: #444; }
   .puntos span.on { background: var(--acc); }
   .asig { margin-top: 10px; }
+  .card.det { margin-top: 10px; }
+  .det-q { margin-top: 10px; } .det-q > span { font-size: 13px; color: var(--sub); }
+  .det-q .pros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .det-foto { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .det-foto img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+  .mini-btn { display: inline-block; width: auto; margin: 0; padding: 9px 14px; font-size: 14px; cursor: pointer; }
+  .opc { color: var(--sub); font-weight: 400; }
   .asig .pros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .pro { border: 1px solid var(--line); background: transparent; color: var(--txt); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 14px; cursor: pointer; }
   .pro.on { border-color: var(--acc); background: var(--acc); color: #1b1310; font-weight: 600; }
@@ -419,11 +426,11 @@ function filasServicios(E, nombrePro, hora) {
 /** Filas del resumen desde segmentos [{ servicio, profesional, hora, fin, precio, variable }]. */
 function filasSeg(segs) {
   return (segs.length > 1 ? `<div class="cab-serv">${segs.length} servicios, uno después del otro</div>` : '') +
-    segs.map(x => `<div class="item"><span>${esc(x.servicio)}<small>${esc(x.profesional)} · ${rangoTxt(aMinW(x.hora), aMinW(x.fin))} (${dur(aMinW(x.fin) - aMinW(x.hora))})</small></span><b>${precioTxt(x.precio, x.variable)}</b></div>`).join('');
+    segs.map(x => `<div class="item"><span>${esc(x.servicio)}<small>${x.profesional ? esc(x.profesional) + ' · ' : ''}${rangoTxt(aMinW(x.hora), aMinW(x.fin))} (${dur(aMinW(x.fin) - aMinW(x.hora))})</small></span><b>${precioTxt(x.precio, x.variable)}</b></div>`).join('');
 }
 const cuandoSeg = (fechaTxt, segs) => fechaTxt + ', ' + rangoTxt(aMinW(segs[0].hora), aMinW(segs[segs.length - 1].fin));
 /** Plan del servidor ([{ s, p, nombre, servicio, hora, fin }]) → segmentos con precio. */
-const segDePlan = plan => plan.map(x => { const sv = D.servicios.find(y => y.id === x.s) || {}; return { servicio: x.servicio, profesional: x.nombre, hora: x.hora, fin: x.fin, precio: sv.precio || 0, variable: !!sv.variable }; });
+const segDePlan = plan => plan.map(x => { const sv = D.servicios.find(y => y.id === x.s) || {}; return { servicio: x.servicio, profesional: D.asignaAdmin ? '' : x.nombre, hora: x.hora, fin: x.fin, precio: sv.precio || 0, variable: !!sv.variable }; });
 
 /** "jueves 22 de octubre, 1:00 p. m. – 5:00 p. m." */
 function cuandoTxt(fechaTxt, E, nombrePro, hora) {
@@ -434,13 +441,117 @@ function cuandoTxt(fechaTxt, E, nombrePro, hora) {
 /** Profesionales que hacen TODOS los servicios elegidos. */
 function capaces() { return D.profesionales.filter(b => R.servicios.every(id => (b.servicios || []).indexOf(id) >= 0)); }
 
+/* ---------- Detalle por servicio (modo: la administración reparte las agendas) ---------- */
+// Preguntas rápidas por categoría. Además hay texto libre y una foto opcional por servicio.
+const PREGUNTAS = [
+  { cat: /pedi|pies|spa/i, q: [
+    ['¿Traes algo puesto?', ['Nada', 'Esmalte tradicional', 'Semipermanente']],
+    ['¿Alguna molestia?', ['Ninguna', 'Callos o durezas', 'Uña encarnada', 'Uñas gruesas o con hongos']]] },
+  { cat: /u[ñn]a|manicur|manos/i, q: [
+    ['¿Traes algo puesto?', ['Nada', 'Esmalte tradicional', 'Semipermanente', 'Acrílico, press on o polygel']],
+    ['Largo', ['Corto', 'Medio', 'Largo', 'El que me recomienden']],
+    ['Forma', ['Cuadrada', 'Redonda', 'Almendra', 'Bailarina', 'Stiletto', 'La que me recomienden']],
+    ['Diseño', ['Un solo color', 'Diseño sencillo', 'Diseño elaborado']]] },
+  { cat: /ceja/i, q: [
+    ['¿Es tu primera vez?', ['Sí', 'No']],
+    ['Resultado', ['Natural', 'Definido', 'El que me recomienden']]] },
+  { cat: /pesta/i, q: [
+    ['¿Traes extensiones puestas?', ['No', 'Sí, de aquí', 'Sí, de otro lugar']],
+    ['Efecto', ['Natural', 'Medio', 'Dramático', 'El que me recomienden']],
+    ['¿Es tu primera vez?', ['Sí', 'No']]] },
+  { cat: /maquill/i, q: [
+    ['Ocasión', ['Fiesta o evento', 'Grado', 'Boda', 'Fotos', 'Otra']],
+    ['Estilo', ['Natural', 'Glam', 'El que me recomienden']]] },
+  { cat: /depil|cera/i, q: [
+    ['¿Primera vez con cera?', ['Sí', 'No']],
+    ['¿Piel sensible?', ['No', 'Sí']]] },
+  { cat: /cabello|pelo|corte|color|tinte|kerat/i, q: [
+    ['Largo de tu cabello', ['Corto', 'Medio', 'Largo', 'Muy largo']],
+    ['Químicos en los últimos 3 meses', ['Ninguno', 'Tinte', 'Keratina o alisado', 'Decoloración']]] }
+];
+const AYUDA_TXT = [
+  [/pedi|pies|spa/i, 'Ej.: quiero un rojo; tengo una uña encarnada en el pie derecho…'],
+  [/u[ñn]a|manicur/i, 'Ej.: quiero un nude con brillo, flores en dos uñas; me las comí y están cortas…'],
+  [/ceja/i, 'Ej.: las tengo muy delgadas y quiero que se vean más pobladas…'],
+  [/pesta/i, 'Ej.: quiero un efecto natural para el día a día; tengo los ojos sensibles…'],
+  [/maquill/i, 'Ej.: es para un matrimonio a las 6 p. m., vestido verde esmeralda…'],
+  [/depil|cera/i, 'Ej.: zona, si te depilas con cuchilla, si tomas algún medicamento…']
+];
+function preguntasDe(s) { const p = PREGUNTAS.find(x => x.cat.test(s.cat + ' ' + s.nombre)); return p ? p.q : []; }
+function ayudaDe(s) { const a = AYUDA_TXT.find(x => x[0].test(s.cat + ' ' + s.nombre)); return a ? a[1] : 'Cuéntanos qué quieres, cómo lo tienes hoy y cualquier cosa que debamos saber (alergias, sensibilidad…)'; }
+function detalleHtml(s, i, n) {
+  R.det = R.det || {};
+  const d = R.det[s.id] = R.det[s.id] || { r: {}, t: '', foto: '' };
+  return `<div class="card det" data-det="${esc(s.id)}">
+    <b>${n > 1 ? (i + 1) + '. ' : ''}${esc(s.nombre)}</b>
+    ${preguntasDe(s).map(([q, ops]) => `<div class="det-q"><span>${esc(q)}</span><div class="pros">${ops.map(o =>
+      `<button type="button" class="pro ${d.r[q] === o ? 'on' : ''}" data-q="${esc(q)}" data-o="${esc(o)}" aria-pressed="${d.r[q] === o}">${esc(o)}</button>`).join('')}</div></div>`).join('')}
+    <label>¿Qué quieres exactamente? <span class="opc">(opcional)</span></label>
+    <textarea class="det-t" maxlength="400" rows="3" placeholder="${esc(ayudaDe(s))}">${esc(d.t)}</textarea>
+    <div class="det-foto">${d.foto ? `<img src="${d.foto}" alt="Foto de referencia"><button type="button" class="link det-quitar">Quitar foto</button>`
+      : `<label class="btn sec mini-btn">📷 Agregar foto de referencia<input type="file" accept="image/*" class="det-file" hidden></label><small class="muted">Opcional: el diseño que te gusta o cómo las tienes hoy.</small>`}</div>
+  </div>`;
+}
+function enlazarDetalles() {
+  document.querySelectorAll('[data-det]').forEach(card => {
+    const d = R.det[card.dataset.det];
+    card.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
+      const q = b.dataset.q;
+      d.r[q] = d.r[q] === b.dataset.o ? '' : b.dataset.o;
+      card.querySelectorAll('[data-q]').forEach(x => { if (x.dataset.q === q) { const on = d.r[q] === x.dataset.o; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); } });
+    });
+    card.querySelector('.det-t').oninput = e => { d.t = e.target.value; };
+    const f = card.querySelector('.det-file');
+    if (f) f.onchange = async () => {
+      const file = f.files[0]; if (!file) return;
+      try { d.foto = await comprimirFoto(file); } catch (e) { alert('No pudimos leer esa foto. Prueba con otra.'); return; }
+      const y = window.scrollY; vistaReservar(); window.scrollTo(0, y);
+    };
+    const q = card.querySelector('.det-quitar');
+    if (q) q.onclick = () => { d.foto = ''; const y = window.scrollY; vistaReservar(); window.scrollTo(0, y); };
+  });
+}
+/** Foto → JPEG de máximo 1000 px y ~200 KB. */
+function comprimirFoto(file) {
+  return new Promise((ok, mal) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let lado = 1000, cal = 0.8, out = '';
+      for (let k = 0; k < 6; k++) {
+        const e = Math.min(1, lado / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * e); c.height = Math.round(img.height * e);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        out = c.toDataURL('image/jpeg', cal);
+        if (out.length < 280000) return ok(out);
+        lado *= 0.8; cal = Math.max(0.5, cal - 0.08);
+      }
+      out.length < 300000 ? ok(out) : mal(new Error('pesada'));
+    };
+    img.onerror = mal; img.src = url;
+  });
+}
+function detallesParaEnviar() {
+  const det = {}, fotos = [];
+  R.servicios.forEach(id => {
+    const d = (R.det || {})[id]; if (!d) return;
+    const r = {}; Object.keys(d.r).forEach(k => { if (d.r[k]) r[k] = d.r[k]; });
+    det[id] = { r, t: (d.t || '').trim() };
+    if (d.foto && fotos.length < 3) fotos.push({ s: id, datos: d.foto });
+  });
+  return { detalles: JSON.stringify(det), fotos: JSON.stringify(fotos) };
+}
+
 function vistaReservar() {
   const v = $('#v-reservar');
   R.servicios = R.servicios.filter(id => D.servicios.some(s => s.id === id));
   const E = elegidos();
-  const multi = E.l.length > 1; // varios servicios: cada uno con su profesional, uno detrás de otro
+  const multi = E.l.length > 1 || (D.asignaAdmin && E.l.length > 0); // visita: servicios uno detrás de otro (en modo administración, siempre)
   const aptas = R.servicios.length && !multi ? capaces() : [];
-  if (multi) {
+  if (multi && D.asignaAdmin) {
+    // La administración reparte: la clienta no elige profesional.
+    R.asig = {}; R.servicios.forEach(id => { R.asig[id] = '*'; });
+  } else if (multi) {
     Object.keys(R.asig).forEach(id => { if (R.servicios.indexOf(id) < 0) delete R.asig[id]; });
     // La profesional que la clienta ya eligió se mantiene para los servicios que agregue (si los hace).
     const conHora = R.horaCon ? (D.profesionales.find(b => b.nombre === R.horaCon) || {}).id : '';
@@ -492,14 +603,17 @@ function vistaReservar() {
       ${E.l.length < 2 ? '' : `<div class="lista-elegidos">${E.l.map(s => `<span class="tag">${esc(s.nombre)} <button data-quitar="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">×</button></span>`).join('')}</div>`}
       <div class="suma"><span>${E.l.length} ${E.l.length === 1 ? 'servicio' : 'servicios'} · ${dur(E.dur)}</span><b>${precioTxt(E.precio, E.variable)}</b></div>
       ${E.abono ? `<div class="nota-abono"><span>Para confirmar esta cita se pide un abono de <b>${pesos(E.abono)}</b>, que se descuenta del total.</span></div>` : ''}
-      <label for="notas">Notas para tu cita (opcional)</label>
-      <textarea id="notas" maxlength="300" rows="3" placeholder="Ej.: tengo el cabello largo, quiero un tono más claro, soy alérgica a…">${esc(R.notas || '')}</textarea>
+      ${D.asignaAdmin ? '' : `<label for="notas">Notas para tu cita (opcional)</label>
+      <textarea id="notas" maxlength="300" rows="3" placeholder="Ej.: tengo el cabello largo, quiero un tono más claro, soy alérgica a…">${esc(R.notas || '')}</textarea>`}
     </div>`;
   }
 
   // 2 · Profesional: con varios servicios, una por servicio
   const multiOk = multi && E.l.every(s => D.profesionales.some(b => (b.servicios || []).indexOf(s.id) >= 0));
-  if (multi && !R.agregando) {
+  if (multi && D.asignaAdmin && !R.agregando) {
+    html += '<h2 id="paso2">2 · Cuéntanos qué quieres <small>en cada servicio</small></h2>' + E.l.map((s, i) => detalleHtml(s, i, E.l.length)).join('');
+    if (!multiOk) html += '<p class="card muted">Por ahora no podemos agendar alguno de estos servicios en línea. Quítalo y escríbenos por WhatsApp.</p>';
+  } else if (multi && !R.agregando) {
     html += '<h2 id="paso2">2 · ¿Con quién? <small>elige para cada servicio</small></h2>';
     html += E.l.map((s, i) => {
       const ok = D.profesionales.filter(b => (b.servicios || []).indexOf(s.id) >= 0);
@@ -554,7 +668,7 @@ function vistaReservar() {
     html += `<h2>5 · Tus datos</h2>
       <div class="card resumen">
         ${segs ? filasSeg(segs) : filasServicios(E, quien, R.hora)}
-        <div><span>Con</span><b>${esc(quienes)}</b></div>
+        ${D.asignaAdmin ? '' : `<div><span>Con</span><b>${esc(quienes)}</b></div>`}
         <div><span>Cuándo</span><b>${esc(segs ? cuandoSeg(fechaLarga(R.fecha), segs) : cuandoTxt(fechaLarga(R.fecha), E, quien, R.hora))}</b></div>
         <div><span>Duración${E.l.length > 1 ? ' total' : ''}</span><b>${dur(durTot)}</b></div>
         <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
@@ -586,7 +700,8 @@ function vistaReservar() {
     setTimeout(() => { const p = $('#paso1'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   });
   v.querySelectorAll('[data-asig]').forEach(b => b.onclick = () => { R.asig[b.dataset.asig] = b.dataset.pro; R.hora = null; R.plan = null; vistaReservar(); });
-  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.servicios = []; R.asig = {}; R.plan = null; R.horaCon = ''; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+  enlazarDetalles();
+  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.det = {}; R.servicios = []; R.asig = {}; R.plan = null; R.horaCon = ''; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   // "Agregar otro servicio" arriba (paso 1) y al final (paso 5): guarda lo escrito y abre la lista.
   v.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => {
     if ($('#nombre')) R.nombre = $('#nombre').value;
@@ -632,7 +747,7 @@ function claseDia(m, iso) { return !m ? 'cargando' : m[iso] > 0 ? 'libre' : 'lle
 function cupoTxt(m, iso) { return !m ? '<span class="cupo">&nbsp;</span>' : m[iso] > 0 ? `<span class="cupo">${m[iso] === 1 ? '1 cupo' : m[iso] + ' cupos'}</span>` : '<span class="cupo">Sin cupo</span>'; }
 async function cargarDias() {
   const clave = claveDias(), n = ++pedidoDias;
-  const multi = R.servicios.length > 1;
+  const multi = R.servicios.length > 1 || D.asignaAdmin;
   try {
     const r = await api(multi ? { a: 'dias', servicio: R.servicios.join(','), asig: JSON.stringify(R.asig) }
       : { a: 'dias', profesional: R.profesional, servicio: R.servicios.join(',') });
@@ -657,13 +772,13 @@ async function cargarHoras() {
   const n = ++pedidoHoras;
   const caja = $('#horas');
   try {
-    const multi = R.servicios.length > 1;
+    const multi = R.servicios.length > 1 || D.asignaAdmin;
     const r = await api(multi ? { a: 'libres', fecha: R.fecha, servicio: R.servicios.join(','), asig: JSON.stringify(R.asig) }
       : { a: 'libres', fecha: R.fecha, profesional: R.profesional, servicio: R.servicios.join(',') });
     if (n !== pedidoHoras || !$('#horas')) return;
     if (!r.libres.length) {
       caja.className = '';
-      caja.innerHTML = `<p class="muted">${multi ? 'Ese día no alcanzan a encadenarse estos servicios con esas profesionales. Prueba otro día o elige "La que esté libre".' : 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'}</p>` + formEspera();
+      caja.innerHTML = `<p class="muted">${D.asignaAdmin ? 'Ese día ya no hay cupo para ' + (R.servicios.length > 1 ? 'estos servicios' : 'este servicio') + '. Prueba otro día.' : multi ? 'Ese día no alcanzan a encadenarse estos servicios con esas profesionales. Prueba otro día o elige "La que esté libre".' : 'No quedan horarios libres ese día para ' + dur(elegidos().dur) + '. Prueba otro día u otra profesional.'}</p>` + formEspera();
       enlazarEspera();
       return;
     }
@@ -725,10 +840,11 @@ async function confirmar() {
   const btn = $('#confirmar'); btn.disabled = true; btn.textContent = 'Reservando…'; $('#err').textContent = '';
   try {
     const Eres = elegidos(), horaRes = R.hora;
-    const multi = R.servicios.length > 1;
+    const multi = R.servicios.length > 1 || D.asignaAdmin;
     const r = await api(Object.assign({ a: 'reservar', nombre, tel, servicio: R.servicios.join(','), fecha: R.fecha, hora: R.hora, notas: (R.notas || '').trim(),
       cumpleDia: R.cuDia || '', cumpleMes: R.cuMes || '' },
-      multi ? { asig: R.asig } : { profesional: R.profesional }), true);
+      multi ? { asig: R.asig } : { profesional: R.profesional },
+      D.asignaAdmin ? detallesParaEnviar() : {}), true);
     // Detalle por servicio: el que manda el servidor (visita) o el calculado aquí (una profesional).
     const segs = r.segmentos || turnosCita(Eres, r.profesional, horaRes).map(x => ({ servicio: x.s.nombre, profesional: r.profesional, hora: deMin(x.ini), fin: deMin(x.fin), precio: x.s.precio, variable: x.s.variable }));
     guardar('cliente', { nombre, tel });
@@ -736,7 +852,7 @@ async function confirmar() {
     guardar('ultimaCita', { cita: r.cita, t: r.tel });
     const enlace = location.origin + location.pathname + '?cita=' + r.cita + '&t=' + r.tel;
     const waDest = r.waProfesional || D.whatsapp;
-    const msg = 'Hola, reservé en ' + D.negocio + ': ' + (segs.length > 1 ? segs.map(x => x.servicio + ' con ' + x.profesional + ' ' + rangoTxt(aMinW(x.hora), aMinW(x.fin)) + ' (' + precioTxt(x.precio, x.variable) + ')').join(', ') : r.servicio) + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + ' con ' + r.profesional + '. Código ' + r.cita + '.' +
+    const msg = 'Hola, reservé en ' + D.negocio + ': ' + (segs.length > 1 ? segs.map(x => x.servicio + (x.profesional ? ' con ' + x.profesional : '') + ' ' + rangoTxt(aMinW(x.hora), aMinW(x.fin)) + ' (' + precioTxt(x.precio, x.variable) + ')').join(', ') : r.servicio) + ' el ' + r.fechaTxt + ' a las ' + r.hora12 + (r.profesional ? ' con ' + r.profesional : '') + '. Código ' + r.cita + '.' +
       (r.abono ? ' Te envío el comprobante del abono de ' + pesos(r.abono) + '.' : '');
     $('#v-reservar').innerHTML = `
       <h2>¡Reserva recibida!</h2>
@@ -744,7 +860,7 @@ async function confirmar() {
         <div class="muted">Tu código</div><div class="codigo">${esc(r.cita)}</div>
         <div class="resumen" style="margin-top:8px">
           ${segs.length ? filasSeg(segs) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`}
-          <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
+          ${r.profesional ? `<div><span>Profesional</span><b>${esc(r.profesional)}</b></div>` : ''}
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
           <div><span>Cuándo</span><b>${esc(segs.length ? cuandoSeg(r.fechaTxt, segs) : r.fechaTxt + ', ' + r.hora12)}</b></div>
           <div><span>Duración${Eres.l.length > 1 ? ' total' : ''}</span><b>${dur(r.dur)}</b></div>
@@ -766,7 +882,7 @@ async function confirmar() {
       <div class="card" style="word-break:break-all;font-size:13px">${esc(enlace)}</div>
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
-    R.notas = '';
+    R.notas = ''; R.det = {};
     $('#otra').onclick = () => { DISP.t = 0; R.servicios = []; R.asig = {}; R.plan = null; R.cuDia = R.cuMes = ''; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
@@ -805,7 +921,7 @@ async function consultar() {
           ${(() => { // detalle por servicio si se reconocen todos los nombres de la cita
             return r.segmentos && r.segmentos.length ? filasSeg(r.segmentos) : `<div><span>Servicio</span><b>${esc(r.servicio)}</b></div>`;
           })()}
-          <div><span>Profesional</span><b>${esc(r.profesional)}</b></div>
+          ${r.profesional ? `<div><span>Profesional</span><b>${esc(r.profesional)}</b></div>` : (D.asignaAdmin && /Pendiente|proceso/.test(r.estado) ? '<div><span>Profesional</span><b>Te la confirmamos por WhatsApp</b></div>' : '')}
           <div><span>Cuándo</span><b>${esc(r.segmentos && r.segmentos.length ? cuandoSeg(r.fechaTxt, r.segmentos) : r.fechaTxt + ', ' + r.hora12 + (r.fin ? ' – ' + hora12(r.fin) : ''))}</b></div>
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
           ${r.abono ? `<div class="fila-abono ${r.abonoPagado >= r.abono ? 'ok' : ''}"><span>${r.abonoPagado >= r.abono ? 'Abono recibido' : 'Abono pendiente'}<small>${r.abonoPagado >= r.abono ? 'Gracias, ya lo registramos' : 'Tu cita se confirma cuando lo recibamos'}</small></span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' ✓' : pesos(r.abono)}</b></div>` : ''}
@@ -843,6 +959,9 @@ function vistaPlanes() {
 
 /* ---------- Inicio ---------- */
 function pintarDatos() {
+  // Sin planes activos, la pestaña Planes no se muestra.
+  const bp = document.querySelector('nav [data-tab="planes"]');
+  if (bp) bp.hidden = !(D.planes && D.planes.length);
   document.title = D.negocio + ' · Reserva tu cita';
   $('#lema').textContent = D.ciudad || '';
   const horas = D.horario.map((h, i) => DIAS[i] + ' ' + (cerrado(h) ? 'cerrado' : h.replace('-', '–'))).slice(1).concat(DIAS[0] + ' ' + (cerrado(D.horario[0]) ? 'cerrado' : D.horario[0].replace('-', '–')));

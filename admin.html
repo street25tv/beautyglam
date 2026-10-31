@@ -85,6 +85,14 @@
   .tag.pend { background: #2b1d0f; color: var(--oro); } .tag.fin { background: #10261a; color: var(--ok); } .tag.at { background: #13233a; color: #7fb2ff; } .tag.na { background: #262626; color: var(--sub); }
   .cita { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
   .cita-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .detalle-cli { background: rgba(207, 178, 165, .1); border-left: 3px solid var(--acc); border-radius: 0 10px 10px 0; padding: 8px 10px; margin: 6px 0; font-size: 14px; }
+  .detalle-cli b { display: block; font-size: 12px; color: var(--acc); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+  .detalle-cli div { padding: 2px 0; }
+  .nota-sep { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+  .visor-cita { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.88); overflow: auto; padding: 16px; }
+  .visor-caja { max-width: 560px; margin: 0 auto; background: var(--card); border-radius: 16px; padding: 14px; }
+  .visor-caja figure { margin: 12px 0 0; } .visor-caja img { width: 100%; border-radius: 12px; display: block; }
+  .visor-caja figcaption { font-size: 13px; color: var(--sub); margin-top: 4px; }
   .pend-card { border-color: #7a5f52; }
   .dias-nav { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
   .dias-nav input { flex: 1; min-width: 0; padding: 9px; }
@@ -336,11 +344,27 @@ function botonesCita(c) {
   return b.join('');
 }
 
+async function verFotosCita(id, boton) {
+  const t = boton.textContent; boton.disabled = true; boton.textContent = 'Cargando…';
+  try {
+    const r = await api({ a: 'aFotosCita', token: S.token, cita: id });
+    const v = document.createElement('div'); v.className = 'visor-cita';
+    v.innerHTML = `<div class="visor-caja"><div class="top" style="margin:0"><b>${esc(r.cliente)} · ${esc(id)}</b><button class="link" data-cerrar>Cerrar ✕</button></div>
+      ${r.fotos.map(f => `<figure><img src="${f.src}" alt="Foto de referencia"><figcaption>${esc(f.nota)}</figcaption></figure>`).join('') || '<p class="muted">Sin fotos.</p>'}</div>`;
+    v.onclick = e => { if (e.target === v || e.target.hasAttribute('data-cerrar')) v.remove(); };
+    document.body.appendChild(v);
+  } catch (e) { alert(e.message); }
+  boton.disabled = false; boton.textContent = t;
+}
+
 function filaCita(c, conFecha) {
   return `<div class="cita" id="cita-${esc(c.id)}">
     <div class="cita-top"><b>${conFecha ? esc(fechaCorta(c.fecha)) + ' · ' : ''}${esc(c.hora12)}</b><span class="tag ${ESTADO_CLASE[c.estado] || ''}">${esc(c.estado)}</span></div>
     <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)}${conFecha ? ' · ' + esc(c.profesional) : ''}${c.fin ? ' · hasta ' + esc(h12(c.fin)) : ''}</span></div>
     ${c.abono ? `<div class="muted">Abono: ${c.abonoPagado >= c.abono ? '<span class="tag si">' + pesosC(c.abonoPagado) + ' recibido</span>' : '<span class="tag pend">' + pesosC(c.abonoPagado) + ' de ' + pesosC(c.abono) + '</span>'}</div>` : ''}
+    ${c.detalle ? `<div class="detalle-cli"><b>Lo que pidió la clienta</b>${c.detalle.split(' | ').map(d => `<div>${esc(d)}</div>`).join('')}</div>` : ''}
+    ${c.fotosRef ? `<button class="btn mini sec" data-fotoscita="${esc(c.id)}">📷 Ver ${c.fotosRef === 1 ? 'su foto de referencia' : 'sus ' + c.fotosRef + ' fotos de referencia'}</button>` : ''}
+    ${c.estado === 'Pendiente' && c.origen === 'Web' && AG && AG.asignaAdmin ? `<div class="muted" style="font-size:13px">Profesional sugerida por el sistema: <b>${esc(c.profesional)}</b>. Cámbiala con "Reagendar / cambiar profesional" antes de confirmar.</div>` : ''}
     ${c.notas ? `<div class="muted">${esc(c.notas)}</div>` : ''}
     ${c.consent ? `<div class="consent-pend"><span class="tag pend">Falta consentimiento: ${esc(c.consent.faltan.join(', '))}</span>
       ${c.consent.wa ? `<a class="btn mini sec" target="_blank" rel="noopener" href="${esc(c.consent.wa)}">Enviar link</a>` : ''}
@@ -409,6 +433,7 @@ function vistaAgenda(msg, wa) {
   document.querySelectorAll('[data-turnos]').forEach(b => b.onclick = () => cargarTurnos(b.dataset.turnos));
   const todas = g.citas.concat(g.pendientes);
   document.querySelectorAll('[data-mover]').forEach(b => b.onclick = () => vistaCitaForm(todas.find(c => c.id === b.dataset.mover)));
+  document.querySelectorAll('[data-fotoscita]').forEach(b => b.onclick = () => verFotosCita(b.dataset.fotoscita, b));
   document.querySelectorAll('[data-cobrar]').forEach(b => b.onclick = () => vistaFactura(todas.find(c => c.id === b.dataset.cobrar), 'agenda'));
   document.querySelectorAll('[data-abono]').forEach(b => b.onclick = () => vistaAbono(todas.find(c => c.id === b.dataset.abono)));
   document.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
@@ -508,6 +533,8 @@ function vistaCitaForm(c) {
     <h2>${mover ? 'Reagendar cita ' + esc(c.id) : 'Nueva cita'}</h2>
     <div class="card">
       ${mover ? `<b>${esc(c.cliente)}</b><div class="muted">${esc(c.servicio)} · hoy está: ${esc(fechaCorta(c.fecha))}, ${esc(c.hora12)} con ${esc(c.profesional)}</div>
+      ${c.detalle ? `<div class="detalle-cli"><b>Lo que pidió la clienta</b>${c.detalle.split(' | ').map(d => `<div>${esc(d)}</div>`).join('')}</div>` : ''}
+      ${String(c.servicioId).indexOf(',') > 0 ? `<div class="nota-sep"><span class="muted">¿Quieres que cada servicio lo haga una profesional distinta?</span><button class="btn mini sec" id="separar">Separar servicios</button></div>` : ''}
       <label for="c-barb">Profesional (puedes pasarla a otra)</label>
       <select id="c-barb">${(() => { const ap = aptasPara(String(c.servicioId).split(',').map(x => x.trim()).filter(String)); const l = ap.length ? ap : activos;
         return (l.length > 1 ? '<option value="*">Cualquiera disponible</option>' : '') + l.map(b => `<option value="${esc(b.id)}" ${c.profesionalId === b.id ? 'selected' : ''}>${esc(b.nombre)}${c.profesionalId === b.id ? ' (actual)' : ''}</option>`).join(''); })()}</select>` : `
@@ -524,6 +551,12 @@ function vistaCitaForm(c) {
     <button class="btn" id="guardar">${mover ? 'Guardar cambio' : 'Guardar cita'}</button>`;
   $('#volver').onclick = () => vistaAgenda();
   $('#salir').onclick = () => salir();
+  if ($('#separar')) $('#separar').onclick = async e => {
+    if (!confirm('Se crea una cita por cada servicio, una detrás de otra, con la misma profesional. Luego puedes pasar cada una a otra profesional. ¿Continuar?')) return;
+    e.target.disabled = true;
+    try { const r = await api({ a: 'aSepararCita', token: S.token, cita: c.id }); cargarAgenda(r.texto); }
+    catch (err) { $('#msg').textContent = err.message; e.target.disabled = false; }
+  };
   const servicio = () => (mover ? c.servicioId : servSel('c-serv').join(','));
   // Al elegir servicios, el selector de profesional muestra solo las que hacen todos.
   const opcionesServ = () => {
