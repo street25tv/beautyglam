@@ -310,8 +310,11 @@ async function cargarFotos() {
 /* ---------- Fotos de servicios y portadas (las sube la administración) ---------- */
 let FSV = leerLS('fotosServ') || {}; // { S01: { v, src }, 'cat:Uñas': { v, src } }
 const SLUGS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion', pestanas: 'cejas', pedi: 'facial' };
+// Fotos de portada por categoría (img/foto-*.jpg). La administración puede reemplazarlas desde Servicios → Cambiar portada.
+const FOTOS_CAT = { unas: 'unas', pedi: 'pedi', cejas: 'cejas', pestanas: 'pestanas', maquillaje: 'maquillaje', depilacion: 'depilacion' };
 function ilustracion(cat) {
   const k = String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z]/)[0];
+  if (FOTOS_CAT[k]) return 'img/foto-' + FOTOS_CAT[k] + '.jpg';
   return 'img/cat-' + (SLUGS[k] || 'otros') + '.svg';
 }
 function fotoGuardada(k) {
