@@ -147,6 +147,13 @@
   .det-q { margin-top: 10px; } .det-q > span { font-size: 13px; color: var(--sub); }
   .det-q .pros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
   .det-foto { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .det-ok { display: flex; gap: 10px; align-items: flex-start; }
+  .det-ok .ok-ic { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--acc, #cfb2a6); color: #1b1411; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+  .det-ok .ok-tx { flex: 1; min-width: 0; } .det-ok .ok-tx small { display: block; color: var(--sub); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+  .det-listo { margin-top: 12px; }
+  .resumen .det-res { display: block; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .resumen .det-res > span { display: block; font-size: 13px; color: var(--sub); margin-bottom: 4px; }
+  .resumen .det-res p { margin: 4px 0; font-size: 14px; } .resumen .det-res p b { font-weight: 600; }
   .det-foto img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
   .mini-btn { display: inline-block; width: auto; margin: 0; padding: 9px 14px; font-size: 14px; cursor: pointer; }
   .opc { color: var(--sub); font-weight: 400; }
@@ -502,9 +509,35 @@ function detalleHtml(s, i, n) {
     <textarea class="det-t" maxlength="400" rows="3" placeholder="${esc(ayudaDe(s))}">${esc(d.t)}</textarea>
     <div class="det-foto">${d.foto ? `<img src="${d.foto}" alt="Foto de referencia"><button type="button" class="link det-quitar">Quitar foto</button>`
       : `<label class="btn sec mini-btn">📷 Agregar foto de referencia<input type="file" accept="image/*" class="det-file" hidden></label><small class="muted">Opcional: una foto de lo que te gusta o de cómo lo tienes hoy.</small>`}</div>
+    <button type="button" class="btn det-listo" data-det-listo="${esc(s.id)}">Listo ✓ ${n > 1 && i < n - 1 ? 'Siguiente servicio' : 'Elegir día'}</button>
   </div>`;
 }
+/** Texto corto de lo que pidió la clienta en un servicio. */
+function detTexto(id) {
+  const d = (R.det || {})[id]; if (!d) return '';
+  const p = Object.keys(d.r || {}).filter(k => d.r[k]).map(k => k.replace(/^¿|\?$/g, '') + ': ' + d.r[k]);
+  if ((d.t || '').trim()) p.push('“' + d.t.trim() + '”');
+  if (d.foto) p.push('📷 foto de referencia');
+  return p.join(' · ');
+}
+/** Servicio ya contado: una línea con lo elegido y "Editar". */
+function detListoHtml(s, i, n) {
+  const t = detTexto(s.id);
+  return `<div class="card det det-ok"><span class="ok-ic" aria-hidden="true">✓</span>
+    <div class="ok-tx"><b>${n > 1 ? (i + 1) + '. ' : ''}${esc(s.nombre)}</b><small>${t ? esc(t) : 'Sin detalles (opcional)'}</small></div>
+    <button type="button" class="link" data-editar-det="${esc(s.id)}">Editar</button></div>`;
+}
 function enlazarDetalles() {
+  document.querySelectorAll('[data-editar-det]').forEach(b => b.onclick = () => {
+    R.detListo[b.dataset.editarDet] = false;
+    vistaReservar();
+    setTimeout(() => { const c = document.querySelector('[data-det="' + b.dataset.editarDet + '"]'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  });
+  document.querySelectorAll('[data-det-listo]').forEach(b => b.onclick = () => {
+    R.detListo[b.dataset.detListo] = true;
+    vistaReservar();
+    setTimeout(() => { const c = document.querySelector('[data-det]') || $('#paso3'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  });
   document.querySelectorAll('[data-det]').forEach(card => {
     const d = R.det[card.dataset.det];
     card.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
@@ -623,7 +656,9 @@ function vistaReservar() {
   // 2 · Profesional: con varios servicios, una por servicio
   const multiOk = multi && E.l.every(s => D.profesionales.some(b => (b.servicios || []).indexOf(s.id) >= 0));
   if (multi && D.asignaAdmin && !R.agregando) {
-    html += '<h2 id="paso2">2 · Cuéntanos qué quieres <small>en cada servicio</small></h2>' + E.l.map((s, i) => detalleHtml(s, i, E.l.length)).join('');
+    R.detListo = R.detListo || {};
+    html += '<h2 id="paso2">2 · Cuéntanos qué quieres <small>' + (E.l.length > 1 ? 'en cada servicio' : 'en tu servicio') + '</small></h2>' +
+      E.l.map((s, i) => R.detListo[s.id] ? detListoHtml(s, i, E.l.length) : detalleHtml(s, i, E.l.length)).join('');
     if (!multiOk) html += '<p class="card muted">Por ahora no podemos agendar alguno de estos servicios en línea. Quítalo y escríbenos por WhatsApp.</p>';
   } else if (multi && !R.agregando) {
     html += '<h2 id="paso2">2 · ¿Con quién? <small>elige para cada servicio</small></h2>';
@@ -659,7 +694,7 @@ function vistaReservar() {
 
   const listo = E.l.length && !R.agregando && (multi ? multiOk : R.profesional && aptas.length);
   if (listo) {
-    html += '<h2>3 · Día</h2><div class="leyenda"><span><i class="v"></i>Con cupo</span><span><i class="g"></i>Sin cupo</span></div><div class="chips dias">';
+    html += '<h2 id="paso3">3 · Día</h2><div class="leyenda"><span><i class="v"></i>Con cupo</span><span><i class="g"></i>Sin cupo</span></div><div class="chips dias">';
     const hoy = deISO(D.hoy);
     const mapa = mapaDias();
     for (let i = 0; i <= D.dias; i++) {
@@ -686,6 +721,7 @@ function vistaReservar() {
         <div><span>Total</span><b>${precioTxt(E.precio, E.variable)}</b></div>
         ${E.abono ? `<div class="fila-abono"><span>Abono para confirmar<small>Se descuenta del total · el resto lo pagas en el salón</small></span><b>${pesos(E.abono)}</b></div>` : ''}
         ${(R.notas || '').trim() ? `<div><span>Tus notas</span><b>${esc(R.notas.trim())}</b></div>` : ''}
+        ${D.asignaAdmin && E.l.some(s => detTexto(s.id)) ? `<div class="det-res"><span>Lo que pediste</span>${E.l.map(s => `<p><b>${esc(s.nombre)}:</b> ${esc(detTexto(s.id) || 'sin detalles')}</p>`).join('')}</div>` : ''}
       </div>
       ${E.l.length < 6 ? `<div class="acc-serv final"><button class="btn-agregar" data-agregar><span class="mas" aria-hidden="true">+</span>
         <span><b>Agregar otro servicio</b><small>Súmalo a esta misma visita sin perder lo que ya elegiste</small></span></button></div>` : ''}
@@ -713,11 +749,12 @@ function vistaReservar() {
   });
   v.querySelectorAll('[data-asig]').forEach(b => b.onclick = () => { R.asig[b.dataset.asig] = b.dataset.pro; R.hora = null; R.plan = null; vistaReservar(); });
   enlazarDetalles();
-  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.det = {}; R.servicios = []; R.asig = {}; R.plan = null; R.horaCon = ''; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
+  if ($('#cambiar-serv')) $('#cambiar-serv').onclick = () => { R.det = {}; R.detListo = {}; R.servicios = []; R.asig = {}; R.plan = null; R.horaCon = ''; R.profesional = null; R.fecha = null; R.hora = null; vistaReservar(); };
   // "Agregar otro servicio" arriba (paso 1) y al final (paso 5): guarda lo escrito y abre la lista.
   v.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => {
     if ($('#nombre')) R.nombre = $('#nombre').value;
     if ($('#tel')) R.tel = $('#tel').value;
+    R.detListo = R.detListo || {}; R.servicios.forEach(id => { R.detListo[id] = true; }); // lo ya contado queda guardado y resumido
     R.agregando = true; R.hora = null; R.plan = null; vistaReservar();
     setTimeout(() => { const p = $('#paso1'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   });
@@ -896,7 +933,7 @@ async function confirmar() {
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
     enlazarComp(r.cita, r.tel);
-    R.notas = ''; R.det = {};
+    R.notas = ''; R.det = {}; R.detListo = {};
     $('#otra').onclick = () => { DISP.t = 0; R.servicios = []; R.asig = {}; R.plan = null; R.cuDia = R.cuMes = ''; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
