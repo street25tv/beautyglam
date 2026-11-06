@@ -88,6 +88,8 @@
   .detalle-cli { background: rgba(207, 178, 165, .1); border-left: 3px solid var(--acc); border-radius: 0 10px 10px 0; padding: 8px 10px; margin: 6px 0; font-size: 14px; }
   .detalle-cli b { display: block; font-size: 12px; color: var(--acc); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
   .detalle-cli div { padding: 2px 0; }
+  .ab-img { width: 100%; border-radius: 12px; margin-top: 8px; display: block; }
+  .comp-adm { background: #2fbf71; color: #04210f; margin: 6px 0; }
   .nota-sep { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
   .visor-cita { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.88); overflow: auto; padding: 16px; }
   .visor-caja { max-width: 560px; margin: 0 auto; background: var(--card); border-radius: 16px; padding: 14px; }
@@ -344,10 +346,10 @@ function botonesCita(c) {
   return b.join('');
 }
 
-async function verFotosCita(id, boton) {
+async function verFotosCita(id, boton, tipo) {
   const t = boton.textContent; boton.disabled = true; boton.textContent = 'Cargando…';
   try {
-    const r = await api({ a: 'aFotosCita', token: S.token, cita: id });
+    const r = await api({ a: 'aFotosCita', token: S.token, cita: id, tipo: tipo || 'Referencia' });
     const v = document.createElement('div'); v.className = 'visor-cita';
     v.innerHTML = `<div class="visor-caja"><div class="top" style="margin:0"><b>${esc(r.cliente)} · ${esc(id)}</b><button class="link" data-cerrar>Cerrar ✕</button></div>
       ${r.fotos.map(f => `<figure><img src="${f.src}" alt="Foto de referencia"><figcaption>${esc(f.nota)}</figcaption></figure>`).join('') || '<p class="muted">Sin fotos.</p>'}</div>`;
@@ -363,6 +365,7 @@ function filaCita(c, conFecha) {
     <div>${esc(c.cliente)} <span class="muted">· ${esc(c.servicio)}${conFecha ? ' · ' + esc(c.profesional) : ''}${c.fin ? ' · hasta ' + esc(h12(c.fin)) : ''}</span></div>
     ${c.abono ? `<div class="muted">Abono: ${c.abonoPagado >= c.abono ? '<span class="tag si">' + pesosC(c.abonoPagado) + ' recibido</span>' : '<span class="tag pend">' + pesosC(c.abonoPagado) + ' de ' + pesosC(c.abono) + '</span>'}</div>` : ''}
     ${c.detalle ? `<div class="detalle-cli"><b>Lo que pidió la clienta</b>${c.detalle.split(' | ').map(d => `<div>${esc(d)}</div>`).join('')}</div>` : ''}
+    ${c.comprobantes && c.abono && c.abonoPagado < c.abono ? `<button class="btn mini comp-adm" data-compcita="${esc(c.visita || c.id)}">🧾 Ver comprobante del abono${c.comprobantes > 1 ? ' (' + c.comprobantes + ')' : ''}</button>` : ''}
     ${c.fotosRef ? `<button class="btn mini sec" data-fotoscita="${esc(c.id)}">📷 Ver ${c.fotosRef === 1 ? 'su foto de referencia' : 'sus ' + c.fotosRef + ' fotos de referencia'}</button>` : ''}
     ${c.estado === 'Pendiente' && c.origen === 'Web' && AG && AG.asignaAdmin ? `<div class="muted" style="font-size:13px">Profesional sugerida por el sistema: <b>${esc(c.profesional)}</b>. Cámbiala con "Reagendar / cambiar profesional" antes de confirmar.</div>` : ''}
     ${c.notas ? `<div class="muted">${esc(c.notas)}</div>` : ''}
@@ -434,6 +437,7 @@ function vistaAgenda(msg, wa) {
   const todas = g.citas.concat(g.pendientes);
   document.querySelectorAll('[data-mover]').forEach(b => b.onclick = () => vistaCitaForm(todas.find(c => c.id === b.dataset.mover)));
   document.querySelectorAll('[data-fotoscita]').forEach(b => b.onclick = () => verFotosCita(b.dataset.fotoscita, b));
+  document.querySelectorAll('[data-compcita]').forEach(b => b.onclick = () => verFotosCita(b.dataset.compcita, b, 'Comprobante'));
   document.querySelectorAll('[data-cobrar]').forEach(b => b.onclick = () => vistaFactura(todas.find(c => c.id === b.dataset.cobrar), 'agenda'));
   document.querySelectorAll('[data-abono]').forEach(b => b.onclick = () => vistaAbono(todas.find(c => c.id === b.dataset.abono)));
   document.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
@@ -462,11 +466,16 @@ function vistaAbono(c) {
         <div><label for="ab-medio">Medio</label><select id="ab-medio">${(AG.medios || ['Efectivo']).map(m => `<option>${esc(m)}</option>`).join('')}</select></div>
       </div>
       <p class="muted">Revisa el comprobante antes de registrarlo. ${c.estado === 'Pendiente' ? 'La cita quedará confirmada.' : ''}</p>
+      <div id="ab-comp">${c.comprobantes ? '<p class="muted">Cargando el comprobante que subió la clienta…</p>' : '<p class="muted">La clienta no ha subido comprobante en la web; revísalo en WhatsApp.</p>'}</div>
     </div>
     <div id="msg" class="err"></div>
     <button class="btn" id="guardar">Registrar abono</button>`;
   $('#volver').onclick = () => vistaAgenda();
   $('#salir').onclick = () => salir();
+  if (c.comprobantes) api({ a: 'aFotosCita', token: S.token, cita: c.visita || c.id, tipo: 'Comprobante' }).then(r => {
+    if (!$('#ab-comp')) return;
+    $('#ab-comp').innerHTML = r.fotos.map(f => `<img class="ab-img" src="${f.src}" alt="Comprobante de pago">`).join('') || '<p class="muted">Sin comprobante.</p>';
+  }).catch(e => { if ($('#ab-comp')) $('#ab-comp').innerHTML = `<p class="err">${esc(e.message)}</p>`; });
   $('#guardar').onclick = async () => {
     const b = $('#guardar'); b.disabled = true; $('#msg').textContent = '';
     try { const r = await api({ a: 'aAbono', token: S.token, cita: c.id, valor: $('#ab-valor').value, medio: $('#ab-medio').value }); cargarAgenda(r.texto, r.wa); }

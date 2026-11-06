@@ -141,6 +141,9 @@
   .puntos span.on { background: var(--acc); }
   .asig { margin-top: 10px; }
   .card.det { margin-top: 10px; }
+  .comp { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .comp-btn { margin: 0; cursor: pointer; }
+  .comp-ok { margin: 0; color: var(--ok); font-weight: 600; }
   .det-q { margin-top: 10px; } .det-q > span { font-size: 13px; color: var(--sub); }
   .det-q .pros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
   .det-foto { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -873,6 +876,7 @@ async function confirmar() {
         <p>${esc(r.datosAbono || 'Escríbenos por WhatsApp y te enviamos los datos para el abono.')}</p>
         ${r.politicaAbono ? `<p class="muted">${esc(r.politicaAbono)}</p>` : ''}
         <p class="muted">Tu cita queda <b>pendiente</b> hasta que el salón reciba el abono.</p>
+        ${compHtml(0)}
       </div>` : ''}
       ${r.consent ? `<div class="card consent"><b>Firma tu consentimiento antes de la cita</b>
         <p class="muted">Para ${esc(r.consent.faltan.join(', ').toLowerCase())} necesitamos unos datos de salud y tu firma. Toma 2 minutos y así tu cita empieza a tiempo.</p>
@@ -882,6 +886,7 @@ async function confirmar() {
       <div class="card" style="word-break:break-all;font-size:13px">${esc(enlace)}</div>
       ${waDest ? `<a class="btn wa" target="_blank" rel="noopener" href="${esc(waLink(waDest, msg))}">${r.abono ? 'Enviar el comprobante por WhatsApp' : 'Avisar por WhatsApp'}</a>` : ''}
       <button class="btn sec" id="otra">Hacer otra reserva</button>`;
+    enlazarComp(r.cita, r.tel);
     R.notas = ''; R.det = {};
     $('#otra').onclick = () => { DISP.t = 0; R.servicios = []; R.asig = {}; R.plan = null; R.cuDia = R.cuMes = ''; R.profesional = null; R.fecha = null; R.hora = null; R.notas = ''; vistaReservar(); };
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -890,6 +895,28 @@ async function confirmar() {
     $('#err').textContent = e.message;
     if (/ocupar/.test(e.message)) { R.hora = null; cargarHoras(); }
   }
+}
+
+/* ---------- Comprobante del abono ---------- */
+function compHtml(n) {
+  return `<div class="comp" id="comp">
+    ${n ? `<p class="comp-ok">✓ Recibimos ${n === 1 ? 'tu comprobante' : n + ' comprobantes'}. Te confirmamos por WhatsApp apenas lo revisemos.</p>` : ''}
+    <label class="btn comp-btn">📎 ${n ? 'Subir otro comprobante' : 'Subir el comprobante de pago'}<input type="file" accept="image/*" id="comp-file" hidden></label>
+    <small class="muted">Toma una captura de la transferencia y súbela aquí. Así identificamos tu pago más rápido.</small>
+    <div class="err" id="comp-err"></div></div>`;
+}
+function enlazarComp(cita, tel) {
+  const f = $('#comp-file'); if (!f) return;
+  f.onchange = async () => {
+    const file = f.files[0]; if (!file) return;
+    const caja = $('#comp'), err = $('#comp-err'); err.textContent = '';
+    const lbl = caja.querySelector('.comp-btn'); lbl.classList.add('cargando'); lbl.firstChild.textContent = 'Subiendo…';
+    try {
+      const datos = await comprimirFoto(file);
+      const r = await api({ a: 'comprobante', cita, t: tel, datos }, true);
+      caja.outerHTML = compHtml(r.comprobantes || 1); enlazarComp(cita, tel);
+    } catch (e) { lbl.classList.remove('cargando'); lbl.firstChild.textContent = '📎 Subir el comprobante de pago'; err.textContent = e.message; }
+  };
 }
 
 /* ---------- Mi cita ---------- */
@@ -926,7 +953,7 @@ async function consultar() {
           <div><span>Dónde</span><b>${esc(r.direccion || D.direccion || '')}</b></div>
           ${r.abono ? `<div class="fila-abono ${r.abonoPagado >= r.abono ? 'ok' : ''}"><span>${r.abonoPagado >= r.abono ? 'Abono recibido' : 'Abono pendiente'}<small>${r.abonoPagado >= r.abono ? 'Gracias, ya lo registramos' : 'Tu cita se confirma cuando lo recibamos'}</small></span><b>${r.abonoPagado >= r.abono ? pesos(r.abonoPagado) + ' ✓' : pesos(r.abono)}</b></div>` : ''}
         </div>
-        ${r.abono && r.abonoPagado < r.abono && r.cancelable ? `<p class="muted">${esc(r.datosAbono)}</p>` : ''}
+        ${r.abono && r.abonoPagado < r.abono && r.cancelable ? `<p class="muted">${esc(r.datosAbono)}</p>${compHtml(r.comprobantes || 0)}` : ''}
         ${r.consent ? `<div class="card consent"><b>Falta tu consentimiento (${esc(r.consent.faltan.join(', '))})</b><a class="btn" href="${esc(r.consent.link)}">Firmar ahora</a></div>` : ''}
         ${r.mapa ? `<a class="mapa" target="_blank" rel="noopener" href="${esc(r.mapa)}">Cómo llegar ↗</a>` : ''}
       </div>
@@ -936,6 +963,7 @@ async function consultar() {
         <p class="muted" style="margin:6px 0 0">${r.sellos.listo ? '¡Completaste tu tarjeta! En tu próxima visita recibes ' + esc(r.sellos.premio) + '.' : 'Llevas ' + r.sellos.sellos + ' de ' + r.sellos.meta + '. Al completarla recibes ' + esc(r.sellos.premio) + '.'}</p></div>` : ''}
       ${r.cancelable ? '<button class="btn sec" id="mc-cancelar">Cancelar esta cita</button>' : ''}
       ${r.tarde ? `<p class="muted">Ya faltan menos de ${r.horasCancelar} horas para tu cita, así que no se puede cancelar en línea. ${D && D.whatsapp ? `<a href="${esc(waLink(D.whatsapp, 'Hola, necesito cancelar o cambiar mi cita ' + r.cita + '.'))}" target="_blank" rel="noopener" style="color:var(--acc)">Escríbenos por WhatsApp</a>.` : ''}</p>` : ''}`;
+    enlazarComp(cita, t);
     if ($('#mc-cancelar')) $('#mc-cancelar').onclick = async () => {
       if (!confirm('¿Seguro que quieres cancelar la cita ' + r.cita + '?')) return;
       const b = $('#mc-cancelar'); b.disabled = true; b.textContent = 'Cancelando…';
