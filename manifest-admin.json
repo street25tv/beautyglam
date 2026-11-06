@@ -1,6 +1,6 @@
 {
-  "name": "Beauty Glam · Administración",
-  "short_name": "BG Admin",
+  "name": "Dorée · Administración",
+  "short_name": "Dorée Admin",
   "start_url": "admin.html",
   "scope": "./",
   "display": "standalone",

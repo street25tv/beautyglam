@@ -122,7 +122,7 @@ function sellosHtml(s) {
 
 /* ---------- Campañas por WhatsApp ---------- */
 let CAMP = { categoria: '', servicio: '', profesional: '', sinVisita: '', cumpleMes: '', sinCita: true,
-  mensaje: 'Hola {nombre} 💖 Te extrañamos en Beauty Glam. Esta semana tenemos un detalle especial para ti. Reserva aquí: {link}', nombre: '' };
+  mensaje: 'Hola {nombre} 💖 Te extrañamos en Dorée. Esta semana tenemos un detalle especial para ti. Reserva aquí: {link}', nombre: '' };
 async function vistaCampanas(msg) {
   let base = null;
   try { base = (await api({ a: 'aServicios', token: S.token })); } catch (e) { base = { servicios: [], categorias: [], profesionales: [] }; }
