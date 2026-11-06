@@ -311,7 +311,7 @@ async function cargarFotos() {
 let FSV = leerLS('fotosServ') || {}; // { S01: { v, src }, 'cat:Uñas': { v, src } }
 const SLUGS = { cabello: 'cabello', color: 'color', unas: 'unas', cejas: 'cejas', maquillaje: 'maquillaje', facial: 'facial', depilacion: 'depilacion', pestanas: 'cejas', pedi: 'facial' };
 // Fotos de portada por categoría (img/foto-*.jpg). La administración puede reemplazarlas desde Servicios → Cambiar portada.
-const FOTOS_CAT = { unas: 'unas', pedi: 'pedi', cejas: 'cejas', pestanas: 'pestanas', maquillaje: 'maquillaje', depilacion: 'depilacion' };
+const FOTOS_CAT = { unas: 'unas', pedi: 'pedi', cejas: 'cejas', pestanas: 'pestanas', maquillaje: 'maquillaje', depilacion: 'depilacion', cabello: 'cabello', facial: 'facial' };
 function ilustracion(cat) {
   const k = String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z]/)[0];
   if (FOTOS_CAT[k]) return 'img/foto-' + FOTOS_CAT[k] + '.jpg';
@@ -450,6 +450,10 @@ function capaces() { return D.profesionales.filter(b => R.servicios.every(id => 
 /* ---------- Detalle por servicio (modo: la administración reparte las agendas) ---------- */
 // Preguntas rápidas por categoría. Además hay texto libre y una foto opcional por servicio.
 const PREGUNTAS = [
+  { cat: /facial|limpieza facial|higiene/i, q: [
+    ['Tipo de piel', ['Normal', 'Grasa', 'Seca', 'Mixta', 'Sensible', 'No sé']],
+    ['¿Primera limpieza facial?', ['Sí', 'No']],
+    ['¿Usas retinol, ácidos o tratamiento con dermatólogo?', ['No', 'Sí']]] },
   { cat: /pedi|pies|spa/i, q: [
     ['¿Traes algo puesto?', ['Nada', 'Esmalte tradicional', 'Semipermanente']],
     ['¿Alguna molestia?', ['Ninguna', 'Callos o durezas', 'Uña encarnada', 'Uñas gruesas o con hongos']]] },
@@ -476,6 +480,8 @@ const PREGUNTAS = [
     ['Químicos en los últimos 3 meses', ['Ninguno', 'Tinte', 'Keratina o alisado', 'Decoloración']]] }
 ];
 const AYUDA_TXT = [
+  [/facial|higiene/i, 'Ej.: tengo puntos negros en la nariz, piel sensible, acné, manchas…'],
+  [/cabello|corte|tinte|kerat|rizo|blower|peinado|hidrata/i, 'Ej.: cabello largo y grueso, quiero un tono más claro, peinado para una boda a las 4 p. m.…'],
   [/pedi|pies|spa/i, 'Ej.: quiero un rojo; tengo una uña encarnada en el pie derecho…'],
   [/u[ñn]a|manicur/i, 'Ej.: quiero un nude con brillo, flores en dos uñas; me las comí y están cortas…'],
   [/ceja/i, 'Ej.: las tengo muy delgadas y quiero que se vean más pobladas…'],
@@ -495,7 +501,7 @@ function detalleHtml(s, i, n) {
     <label>¿Qué quieres exactamente? <span class="opc">(opcional)</span></label>
     <textarea class="det-t" maxlength="400" rows="3" placeholder="${esc(ayudaDe(s))}">${esc(d.t)}</textarea>
     <div class="det-foto">${d.foto ? `<img src="${d.foto}" alt="Foto de referencia"><button type="button" class="link det-quitar">Quitar foto</button>`
-      : `<label class="btn sec mini-btn">📷 Agregar foto de referencia<input type="file" accept="image/*" class="det-file" hidden></label><small class="muted">Opcional: el diseño que te gusta o cómo las tienes hoy.</small>`}</div>
+      : `<label class="btn sec mini-btn">📷 Agregar foto de referencia<input type="file" accept="image/*" class="det-file" hidden></label><small class="muted">Opcional: una foto de lo que te gusta o de cómo lo tienes hoy.</small>`}</div>
   </div>`;
 }
 function enlazarDetalles() {
