@@ -7,6 +7,8 @@
     .ini-hola { margin: 14px 2px 4px; }
     .ini-hola b { font-family: Lora, 'Cormorant Garamond', Georgia, serif; font-size: 24px; display: block; }
     .ini-alertas { display: grid; gap: 8px; margin-top: 10px; }
+    .ia-fila { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; border-top: 1px solid #3a2c25; padding: 10px 0; }
+    .ia-bot { display: flex; gap: 6px; }
     .ini-alerta { display: flex; align-items: center; gap: 10px; background: #2b1f1a; border: 1px solid #7a5f52; border-radius: 12px; padding: 10px 12px; cursor: pointer; text-align: left; color: var(--txt); font: inherit; width: 100%; }
     .ini-alerta .n { flex: none; min-width: 30px; height: 30px; border-radius: 999px; background: var(--acc); color: #2b170f; display: grid; place-items: center; font-weight: 700; padding: 0 8px; }
     .ini-alerta small { display: block; color: var(--sub); }
@@ -75,6 +77,11 @@ async function cargarInicio() {
       <div class="kpi"><span>Clientas</span><b>${d.clientas.total}</b><small>${d.clientas.nuevasMes} nuevas este mes</small></div>
       <div class="kpi"><span>Ticket promedio</span><b>${pesosC(d.ingresos.ticket)}</b><small>por servicio, este mes</small></div>
     </div>
+    ${(d.iaConciliar || []).length ? `<div class="card" id="ini-ia"><b>🧾 Abonos validados automáticamente</b>
+      <div class="muted" style="font-size:13px">Se confirmaron solos fuera de horario. Revisa en el banco que el dinero llegó.</div>
+      ${d.iaConciliar.map(x => `<div class="ia-fila"><div><b>${esc(x.cliente)}</b> · ${esc(x.cita)}<br><small class="muted">${pesosC(x.monto)} · ${esc(x.banco)} · ref ${esc(x.referencia)} · ${esc(x.fecha)}</small></div>
+        <div class="ia-bot"><button class="btn sec mini" data-iafoto="${esc(x.cita)}">Ver</button><button class="btn mini" data-ia="${esc(x.cita)}" data-llego="si">✓ Llegó</button><button class="btn sec mini" data-ia="${esc(x.cita)}" data-llego="no">✗ No llegó</button></div></div>`).join('')}
+      <div class="err" id="ia-err"></div></div>` : ''}
     <div class="card"><div class="top" style="margin:0"><b>Próximas citas de hoy</b><button class="link" data-ir="agenda">Ver agenda →</button></div>
       <div class="muted" style="font-size:13px">${c.confirmadas} confirmadas · ${c.pendientes} pendientes · ${c.finalizadas + c.atendidas} terminadas${c.noAsistio ? ' · ' + c.noAsistio + ' no asistió' : ''}</div>
       ${d.proximas.length ? d.proximas.map(x => `<div class="ini-cita" data-cita="${esc(x.id)}"><div class="h">${esc(h12(x.hora))}<small>a ${esc(h12(x.fin))}</small></div>
@@ -88,6 +95,13 @@ async function cargarInicio() {
     <button class="btn sec" id="ini-recargar">Actualizar</button>`;
   bindNav();
   $('#ini-recargar').onclick = cargarInicio;
+  document.querySelectorAll('[data-iafoto]').forEach(b => b.onclick = () => verFotosCita(b.dataset.iafoto, b, 'Comprobante'));
+  document.querySelectorAll('[data-ia]').forEach(b => b.onclick = async () => {
+    if (b.dataset.llego === 'no' && !confirm('¿Seguro que el dinero NO llegó? Se reversa el abono y la cita vuelve a Pendiente.')) return;
+    b.disabled = true;
+    try { const r = await api({ a: 'aConciliarIA', token: S.token, cita: b.dataset.ia, llego: b.dataset.llego }); alert(r.texto); cargarInicio(); }
+    catch (e) { b.disabled = false; $('#ia-err').textContent = e.message; }
+  });
   document.querySelectorAll('[data-ir]').forEach(b => b.onclick = () => {
     if (b.dataset.ir === 'fidel' && typeof cargarClientas === 'function') { CL.sub = 'fidel'; cargarClientas(); }
     else { A.fecha = d.hoy; cargarAgenda(); }

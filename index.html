@@ -524,12 +524,12 @@ function enlazarDetalles() {
   });
 }
 /** Foto → JPEG de máximo 1000 px y ~200 KB. */
-function comprimirFoto(file) {
+function comprimirFoto(file, lado0) {
   return new Promise((ok, mal) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      let lado = 1000, cal = 0.8, out = '';
+      let lado = lado0 || 1000, cal = 0.8, out = '';
       for (let k = 0; k < 6; k++) {
         const e = Math.min(1, lado / Math.max(img.width, img.height));
         const c = document.createElement('canvas'); c.width = Math.round(img.width * e); c.height = Math.round(img.height * e);
@@ -921,8 +921,10 @@ function enlazarComp(cita, tel) {
     const caja = $('#comp'), err = $('#comp-err'); err.textContent = '';
     const lbl = caja.querySelector('.comp-btn'); lbl.classList.add('cargando'); lbl.firstChild.textContent = 'Subiendo…';
     try {
-      const datos = await comprimirFoto(file);
+      lbl.firstChild.textContent = 'Revisando tu pago…';
+      const datos = await comprimirFoto(file, 1400);
       const r = await api({ a: 'comprobante', cita, t: tel, datos }, true);
+      if (r.confirmada) { caja.outerHTML = `<div class="comp" id="comp"><p class="comp-ok">✓ ${esc(r.texto)}</p></div>`; if ($('#mc-buscar') && $('#mc-res') && $('#mc-res').contains($('#comp'))) setTimeout(consultar, 2500); return; }
       caja.outerHTML = compHtml(r.comprobantes || 1); enlazarComp(cita, tel);
     } catch (e) { lbl.classList.remove('cargando'); lbl.firstChild.textContent = '📎 Subir el comprobante de pago'; err.textContent = e.message; }
   };
